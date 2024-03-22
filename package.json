@@ -71,6 +71,6 @@
     ]
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/@dansreis"
+    "@dansreis:registry": "https://npm.pkg.github.com"
   }
 }

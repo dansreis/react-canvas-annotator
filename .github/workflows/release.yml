@@ -6,34 +6,40 @@ on:
       - main
 
 jobs:
-  publish-npm:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
-          registry-url: 'https://registry.npmjs.org/'
-      - name: Install dependencies
-        run: npm install
-      - name: Publish to NPM
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: '${{secrets.NPM_AUTH_TOKEN}}'
-#   publish-github:
+      - run: npm ci
+      - run: npm test
+#   publish-npm:
 #     runs-on: ubuntu-latest
 #     steps:
-#       - uses: actions/checkout@v2
-#       - uses: actions/setup-node@v1
+#       - name: Checkout code
+#         uses: actions/checkout@v2
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v2
 #         with:
 #           node-version: 18
-#           registry-url: 'https://npm.pkg.github.com/'
-#           scope: '@dansreis'
-#       - run: npm install
-#       - run: npm run test
-#       - run: npm run build
-#       - run: npm publish
+#           registry-url: 'https://registry.npmjs.org/'
+#       - name: Install dependencies
+#         run: npm install
+#       - name: Publish to NPM
+#         run: npm publish --access public
 #         env:
-#           NODE_AUTH_TOKEN: '${{secrets.GITHUB_TOKEN}}'
+#           NODE_AUTH_TOKEN: '${{secrets.NPM_AUTH_TOKEN}}'
+  publish-github:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: 'https://npm.pkg.github.com/'
+      - run: npm ci
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: '${{secrets.GITHUB_TOKEN}}'
