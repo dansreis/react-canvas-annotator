@@ -1,9 +1,8 @@
 name: Publish to NPM  📦
 
 on:
-  push:
-    branches:
-      - main
+    release:
+      types: [created]
 
 jobs:
   build:
@@ -14,6 +13,7 @@ jobs:
         with:
           node-version: 18
       - run: npm ci
+      - run: npm lint
       - run: npm test
   publish-npm:
     runs-on: ubuntu-latest
@@ -27,6 +27,15 @@ jobs:
           node-version: 18
           registry-url: 'https://registry.npmjs.org/'
       - run: npm ci
-      - run: npm publish --access public
+      - name: Prepare Release
         env:
-          NODE_AUTH_TOKEN: '${{secrets.NPM_AUTH_TOKEN}}'
+            GITHUB_TOKEN: ${{ github.token }}
+            NODE_AUTH_TOKEN: '${{secrets.NPM_AUTH_TOKEN}}'
+        run: |
+            echo "New release created!"
+            echo "Release tag name: ${{ github.event.release.tag_name }}"
+            echo "Release name: ${{ github.event.release.name }}"
+            echo "Release body: ${{ github.event.release.body }}"
+      - run: npm version '${{ github.event.release.tag_name }}' && git push
+      - run: npm publish --access public
+          
