@@ -70,7 +70,7 @@
     ]
   },
   "publishConfig": {
-    "@dansreis:registry": "https://npm.pkg.github.com"
+    "dansreis:registry": "https://registry.npmjs.org/"
   },
   "keywords": [
     "react-component",
