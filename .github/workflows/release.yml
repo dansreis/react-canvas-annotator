@@ -1,0 +1,39 @@
+name: Publish to NPM & GitHub Packages 📦
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org/'
+      - name: Install dependencies
+        run: npm install
+      - name: Publish to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: '${{secrets.NPM_AUTH_TOKEN}}'
+#   publish-github:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v2
+#       - uses: actions/setup-node@v1
+#         with:
+#           node-version: 18
+#           registry-url: 'https://npm.pkg.github.com/'
+#           scope: '@dansreis'
+#       - run: npm install
+#       - run: npm run test
+#       - run: npm run build
+#       - run: npm publish
+#         env:
+#           NODE_AUTH_TOKEN: '${{secrets.GITHUB_TOKEN}}'
