@@ -33,6 +33,9 @@ jobs:
 #           NODE_AUTH_TOKEN: '${{secrets.NPM_AUTH_TOKEN}}'
   publish-github:
     runs-on: ubuntu-latest
+    permissions:
+        packages: write
+        contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
