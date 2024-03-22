@@ -4,6 +4,13 @@
       "jest": true,       // Enable Jest for testing
       "browser": true     // Enable browser environment
     },
+
+    "settings": {
+      "react": {
+        "pragma": "React",  // Pragma to use, default to "React"
+        "version": "detect"
+      }
+    },
   
     // Stop ESLint from searching for configuration in parent folders
     "root": true,

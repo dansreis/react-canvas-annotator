@@ -96,15 +96,3 @@ Consult these icon repositories:
 
 - [Material Icons](https://material.io/tools/icons/)
 - [Font Awesome Icons](https://fontawesome.com/icons?d=gallery&m=free)
-
-### Testdrive in project
-To test this package in your project follow this quickstart:
-1. Run `npm link` in the root directory of this project (where the `package.json` is located)
-2. With the same Terminal window, go to your target project folder where the `package.json` is located
-3. Run `npm link "@starwit/react-image-annotate"` to install the package. It might be necessary to remove a previously installed `@starwit/react-image-annotate` package. Please use the same node version when using npm link and executing the application. 
-4. Changes to this repository will apply live to the running dev session in your target project :)
-
-
-### Notes
-Currently, there is an issue with vite-plugin-node-polyfills (0.15.0 at the time of writing), 
-which shows many warnings while building (related to "use client"). That is expected and will probably be fixed in the future. See here: https://github.com/davidmyersdev/vite-plugin-node-polyfills/issues/49 
