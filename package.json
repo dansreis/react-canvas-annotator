@@ -21,9 +21,8 @@
     "build-storybook": "storybook build",
     "prepare": "npm run build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Daniel Reis",
+  "license": "MIT",
   "devDependencies": {
     "@chromatic-com/storybook": "^1.2.25",
     "@storybook/addon-essentials": "^8.0.4",
@@ -72,5 +71,9 @@
   },
   "publishConfig": {
     "@dansreis:registry": "https://npm.pkg.github.com"
-  }
+  },
+  "keywords": [
+    "react-component",
+    "react-image-annotator"
+  ]
 }
