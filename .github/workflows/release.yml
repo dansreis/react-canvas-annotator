@@ -27,6 +27,7 @@ jobs:
           node-version: 18
           registry-url: 'https://registry.npmjs.org/'
       - run: npm ci
+      
       - name: Prepare Release
         env:
             GITHUB_TOKEN: ${{ github.token }}
@@ -38,6 +39,14 @@ jobs:
             echo "Release body: ${{ github.event.release.body }}"
             git config user.name 'github-actions[bot]'
             git config user.email 'github-actions[bot]@users.noreply.github.com'
-      - run: npm version '${{ github.event.release.tag_name }}' && git push
-      - run: npm publish --access public
+            npm version '${{ github.event.release.tag_name }}'
+
+      - name: Publish new version
+        run: npm publish --access public
+      
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
           
