@@ -29,7 +29,6 @@ jobs:
       - name: Prepare Release
         env:
             GITHUB_TOKEN: ${{ github.token }}
-            NODE_AUTH_TOKEN: '${{secrets.NPM_AUTH_TOKEN}}'
         run: |
             echo "New release created!"
             echo "Release tag name: ${{ github.event.release.tag_name }}"
@@ -44,6 +43,8 @@ jobs:
 
       - name: Publish new version
         run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: '${{secrets.NPM_AUTH_TOKEN}}'
       
       - name: Push changes
         uses: ad-m/github-push-action@master
