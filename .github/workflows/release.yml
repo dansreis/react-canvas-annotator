@@ -18,8 +18,6 @@ jobs:
   publish-npm:
     runs-on: ubuntu-latest
     needs: build
-    permissions:
-      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,17 +26,6 @@ jobs:
         with:
           node-version: 18
           registry-url: 'https://registry.npmjs.org/'
-      - name: Prepare Release
-        env:
-            GITHUB_TOKEN: ${{ github.token }}
-        run: |
-            echo "New release created!"
-            echo "Release tag name: ${{ github.event.release.tag_name }}"
-            echo "Release name: ${{ github.event.release.name }}"
-            echo "Release body: ${{ github.event.release.body }}"
-            git config --local user.name 'github-actions[bot]'
-            git config --local user.email 'github-actions[bot]@users.noreply.github.com'
-            npm version '${{ github.event.release.tag_name }}'
 
       - name: Install packages & Build codes
         run: npm ci
@@ -47,12 +34,3 @@ jobs:
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: '${{secrets.NPM_AUTH_TOKEN}}'
-      
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
-          force: true
-          tags: true
-          
