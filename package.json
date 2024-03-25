@@ -37,6 +37,7 @@
     "@storybook/theming": "^8.0.4",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.2",
+    "@types/fabric": "^5.3.7",
     "@types/react": "^18.2.67",
     "@typescript-eslint/eslint-plugin": "^7.3.1",
     "@typescript-eslint/parser": "^7.3.1",
@@ -75,5 +76,9 @@
   "keywords": [
     "react-component",
     "react-image-annotator"
-  ]
+  ],
+  "dependencies": {
+    "fabric": "^5.3.0",
+    "fabricjs-react": "^1.2.2"
+  }
 }
