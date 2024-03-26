@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import Example from "./Example";
+import ExampleMain from "./ExampleMain";
 
-const meta: Meta<typeof Example> = {
+const meta: Meta<typeof ExampleMain> = {
   title: "AnnotatorCanvas",
-  component: Example,
+  component: ExampleMain,
 };
 
 export default meta;
-type Story = StoryObj<typeof Example>;
+type Story = StoryObj<typeof ExampleMain>;
 
 export const Primary: Story = {
   args: {
