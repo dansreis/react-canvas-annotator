@@ -26,6 +26,8 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
     height: 0,
   });
 
+  const [draggingEnabled, setDraggingEnabled] = useState(false);
+
   useEffect(() => {
     if (!editor || !fabric) {
       return;
@@ -72,10 +74,13 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
 
     editor.canvas.on("mouse:down", function (opt) {
       const evt = opt.e;
-      this.isDragging = true;
+      this.isDragging = draggingEnabled;
       this.selection = false;
       this.lastPosX = evt.clientX;
       this.lastPosY = evt.clientY;
+
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
     });
 
     editor.canvas.on("mouse:move", function (opt) {
@@ -90,14 +95,20 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
           this.lastPosY = e.clientY;
         }
       }
+
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
     });
-    editor.canvas.on("mouse:up", function () {
+    editor.canvas.on("mouse:up", function (opt) {
       this.isDragging = false;
       this.selection = true;
+
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
     });
 
     editor.canvas.renderAll();
-  }, [editor]);
+  }, [draggingEnabled, editor]);
 
   // TODO: Make sure this makes sense..
   const resetZoom = () => {
@@ -118,7 +129,9 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
       top: HEIGHT / 2 - (imageSize.height * scaleRatio) / 2 + 460 * scaleRatio,
       width: 73,
       height: 33,
-      fill: "rgba(255,127,39,1)",
+      fill: undefined,
+      stroke: "red",
+      strokeWidth: 1,
       selectable: true,
     });
     editor?.canvas.add(rect);
@@ -171,11 +184,18 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
     // setAction({ primitive: "rectangle", operation: "add" });
   };
 
+  const draggingState = () => {
+    setDraggingEnabled(!draggingEnabled);
+  };
+
   return (
     <div className="App">
       <button onClick={onAddRectangle}>Add Rectangle</button>
       <button onClick={resetZoom}>Reset Zoom</button>
       <button onClick={addRandom}>Add Random</button>
+      <button onClick={draggingState}>
+        DraggingState {draggingEnabled ? "ON" : "OFF"}
+      </button>
       <button onClick={getActiveObjects}>Active Objects</button>
       <div
         style={{
