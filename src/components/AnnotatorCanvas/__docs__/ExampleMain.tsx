@@ -7,13 +7,17 @@ const WIDTH = 800;
 const HEIGHT = 500;
 
 const ExampleMain: FC<AnnotatorCanvasProps> = ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   disabled = false,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onClick = () => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   primary = true,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   size = "small",
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   text = "Button",
 }) => {
-  console.log({ disabled, primary, size, onClick, text });
   const { editor, onReady } = useFabricJSEditor();
   const [currentZoom, setCurrentZoom] = useState<number>(100);
   const [scaleRatio, setScaleRation] = useState<number>(100);
@@ -66,33 +70,30 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
       opt.e.stopPropagation();
     });
 
-    editor.canvas.on("mouse:down", (opt) => {
-      const canvas = editor?.canvas;
-      if (!canvas) return;
+    editor.canvas.on("mouse:down", function (opt) {
+      const evt = opt.e;
+      this.isDragging = true;
+      this.selection = false;
+      this.lastPosX = evt.clientX;
+      this.lastPosY = evt.clientY;
+    });
 
-      // const size = (WIDTH * 0.05) / canvas.getZoom(); // 5% of the width
-      // const pointer = canvas.getPointer(opt.e);
-      // const origX = pointer.x;
-      // const origY = pointer.y;
-
-      // console.log("Clicked!");
-
-      // console.log("Clicked!-insinde");
-      // const rect = new fabric.Rect({
-      //   left: origX,
-      //   top: origY,
-      //   originX: "left",
-      //   originY: "top",
-      //   width: size,
-      //   height: size,
-      //   fill: "rgba(255,127,39,1)",
-      //   selectable: true,
-      // });
-      // canvas.add(rect);
-
-      canvas.renderAll();
-      opt.e.preventDefault();
-      opt.e.stopPropagation();
+    editor.canvas.on("mouse:move", function (opt) {
+      if (this.isDragging) {
+        const e = opt.e;
+        const vpt = editor.canvas.viewportTransform;
+        if (vpt) {
+          vpt[4] += e.clientX - this.lastPosX;
+          vpt[5] += e.clientY - this.lastPosY;
+          editor.canvas.requestRenderAll();
+          this.lastPosX = e.clientX;
+          this.lastPosY = e.clientY;
+        }
+      }
+    });
+    editor.canvas.on("mouse:up", function () {
+      this.isDragging = false;
+      this.selection = true;
     });
 
     editor.canvas.renderAll();
@@ -172,7 +173,6 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
 
   return (
     <div className="App">
-      <h1>FabricJS React Sample</h1>
       <button onClick={onAddRectangle}>Add Rectangle</button>
       <button onClick={resetZoom}>Reset Zoom</button>
       <button onClick={addRandom}>Add Random</button>
