@@ -103,7 +103,7 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
     editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
   };
 
-  const addRandom2 = () => {
+  const getActiveObjects = () => {
     console.log(editor?.canvas.getActiveObjects());
   };
 
@@ -176,7 +176,7 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
       <button onClick={onAddRectangle}>Add Rectangle</button>
       <button onClick={resetZoom}>Reset Zoom</button>
       <button onClick={addRandom}>Add Random</button>
-      <button onClick={addRandom2}>Add Random2</button>
+      <button onClick={getActiveObjects}>Active Objects</button>
       <div
         style={{
           border: `3px solid Green`,
