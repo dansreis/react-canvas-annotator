@@ -1,7 +1,7 @@
 import React, { MouseEventHandler } from "react";
 import styled from "styled-components";
 
-export type RectangleProps = {
+export type AnnotatorMenuItemProps = {
   text?: string;
   primary?: boolean;
   disabled?: boolean;
@@ -9,7 +9,7 @@ export type RectangleProps = {
   onClick?: MouseEventHandler<HTMLButtonElement>;
 };
 
-const StyledButton = styled.button<RectangleProps>`
+const StyledButton = styled.button<AnnotatorMenuItemProps>`
   border: 0;
   line-height: 1;
   font-size: 15px;
@@ -28,7 +28,7 @@ const StyledButton = styled.button<RectangleProps>`
         : "14px 30px 16px"};
 `;
 
-const Button: React.FC<RectangleProps> = ({
+const AnnotatorMenuItem: React.FC<AnnotatorMenuItemProps> = ({
   size,
   primary,
   disabled,
@@ -50,4 +50,4 @@ const Button: React.FC<RectangleProps> = ({
   );
 };
 
-export default Button;
+export default AnnotatorMenuItem;

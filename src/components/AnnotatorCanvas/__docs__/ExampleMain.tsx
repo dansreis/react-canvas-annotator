@@ -148,6 +148,7 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
       height: 100,
       fill: "rgba(255,127,39,1)",
       selectable: true,
+      visible: false,
     });
 
     const renderIcon = (ctx, left, top, styleOverride, fabricObject) => {
@@ -188,6 +189,10 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
     setDraggingEnabled(!draggingEnabled);
   };
 
+  const getVisible = () => {
+    console.log(editor?.canvas.getObjects()?.[0].visible);
+  };
+
   return (
     <div className="App">
       <button onClick={onAddRectangle}>Add Rectangle</button>
@@ -197,6 +202,7 @@ const ExampleMain: FC<AnnotatorCanvasProps> = ({
         DraggingState {draggingEnabled ? "ON" : "OFF"}
       </button>
       <button onClick={getActiveObjects}>Active Objects</button>
+      <button onClick={getVisible}>Get Visible</button>
       <div
         style={{
           border: `3px solid Green`,

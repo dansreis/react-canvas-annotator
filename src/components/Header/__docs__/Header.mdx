@@ -1,27 +1,27 @@
 import { Canvas, Meta } from "@storybook/blocks";
 import Example from "./Example.tsx";
-import * as Rectangle from "./Rectangle.stories.tsx";
+import * as Header from "./Header.stories.tsx";
 
-<Meta of={Rectangle} title="Rectangle" />
+<Meta of={Header} title="Header" />
 
-# Rectangle
+# Header
 
-Rectangle component with different props.
+Header component with different props.
 
 #### Example
 
-<Canvas of={Rectangle.Primary} />
+<Canvas of={Header.Primary} />
 
 ## Usage
 
 ```ts
-import {Rectangle} from "sld-ui";
+import {Header} from "sld-ui";
 
 const Example = () => {
   return (
-      <Rectangle
+      <Header
         size={"small"}
-        text={"Rectangle"}
+        text={"Header"}
         onClick={()=> console.log("Clicked")}
         primary
       />

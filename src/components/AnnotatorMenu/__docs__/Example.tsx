@@ -1,12 +1,12 @@
 import React, { FC } from "react";
-import Rectangle, { RectangleProps } from "../Rectangle";
+import AnnotatorMenu, { AnnotatorMenuProps } from "../AnnotatorMenu";
 
-const Example: FC<RectangleProps> = ({
+const Example: FC<AnnotatorMenuProps> = ({
   disabled = false,
   onClick = () => {},
   primary = true,
   size = "small",
-  text = "Rectangle",
+  text = "AnnotatorMenu",
 }) => {
   return (
     <div
@@ -17,7 +17,7 @@ const Example: FC<RectangleProps> = ({
         height: "100%",
       }}
     >
-      <Rectangle
+      <AnnotatorMenu
         size={size}
         text={text}
         disabled={disabled}
