@@ -1,11 +1,12 @@
-import { Button } from "react-image-annotator";
+import { Button, Header } from "react-image-annotator";
 
 import "./App.css";
 
 function App() {
   return (
     <>
-      <Button text="Button" />;
+      <Button text="Button" onClick={() => console.log("Button!")}/>
+      <Header text="Header" onClick={() => console.log("Header!")}/>
     </>
   );
 }

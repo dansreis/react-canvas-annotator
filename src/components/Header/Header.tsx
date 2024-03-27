@@ -37,16 +37,19 @@ const Header: React.FC<HeaderProps> = ({
   ...props
 }) => {
   return (
-    <StyledButton
-      type="button"
-      onClick={onClick}
-      primary={primary}
-      disabled={disabled}
-      size={size}
-      {...props}
-    >
-      {text}
-    </StyledButton>
+    <>
+      <h1 className="text-3xl font-bold underline">Hello world!</h1>
+      <StyledButton
+        type="button"
+        onClick={onClick}
+        primary={primary}
+        disabled={disabled}
+        size={size}
+        {...props}
+      >
+        {text}
+      </StyledButton>
+    </>
   );
 };
 
