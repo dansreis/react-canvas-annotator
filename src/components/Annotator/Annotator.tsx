@@ -1,56 +1,29 @@
 import React from "react";
-import styled from "styled-components";
 
 export type AnnotatorProps = {
   id?: string;
   primary?: boolean;
 };
 
-const Base = styled.div<AnnotatorProps>`
-  width: 100%;
-  color: ${(props) => (props.primary ? "#fff" : "#000")};
-  background-color: ${(props) => (props.primary ? "#FF5655" : "#f4c4c4")};
-`;
-
-const Header = styled.div`
-  background-color: #333;
-  color: #fff;
-  padding: 10px;
-  text-align: center;
-`;
-
-const Container = styled.div`
-  display: flex;
-  height: calc(100vh - 40px);
-`;
-
-const Toolbar = styled.div`
-  background-color: #ddd;
-  width: 5%;
-  padding: 10px;
-`;
-
-const CanvasContainer = styled.div`
-  flex-grow: 1;
-  position: relative;
-`;
-
-const StackMenu = styled.div`
-  background-color: #ddd;
-  width: 15%;
-  padding: 10px;
-`;
-
 const Annotator: React.FC<AnnotatorProps> = ({ id, primary, ...props }) => {
+  const baseClasses = primary
+    ? "text-white bg-red-600"
+    : "text-black bg-gray-300";
+  const headerClasses = "bg-gray-800 text-white py-2 text-center";
+  const containerClasses = "flex h-screen";
+  const toolbarClasses = "bg-gray-400 w-1/20 p-4";
+  const canvasContainerClasses = "flex-grow";
+  const stackMenuClasses = "bg-gray-400 w-1/6 p-4";
+
   return (
-    <Base id={id} primary={primary} {...props}>
-      <Header>Header</Header>
-      <Container>
-        <Toolbar>Toolbar</Toolbar>
-        <CanvasContainer>CanvasContainer</CanvasContainer>
-        <StackMenu>Stack Meny</StackMenu>
-      </Container>
-    </Base>
+    <div id={id} className={`w-full ${baseClasses}`} {...props}>
+      <div className={headerClasses}>Header</div>
+      <div className={containerClasses}>
+        <div className={toolbarClasses}>Toolbar</div>
+        <div className={canvasContainerClasses}>CanvasContainer</div>
+        <div className={stackMenuClasses}>Stack Menu</div>
+      </div>
+    </div>
   );
 };
 

@@ -1,16 +1,10 @@
 import React, { MouseEventHandler } from "react";
-import styled from "styled-components";
 
 export type ToolbarProps = {
   id?: string;
   primary?: boolean;
-  onClick?: MouseEventHandler<HTMLButtonElement>;
+  onClick?: MouseEventHandler<HTMLDivElement>;
 };
-
-const ToolbarButton = styled.div<ToolbarProps>`
-  color: ${(props) => (props.primary ? "#fff" : "#000")};
-  background-color: ${(props) => (props.primary ? "#FF5655" : "#f4c4c4")};
-`;
 
 const Toolbar: React.FC<ToolbarProps> = ({
   id,
@@ -18,10 +12,19 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onClick,
   ...props
 }) => {
+  // Determine button color and background color based on primary prop
+  const buttonColor = primary ? "text-white" : "text-black";
+  const bgColor = primary ? "bg-red-600" : "bg-gray-300";
+
   return (
-    <ToolbarButton id={id} onClick={onClick} primary={primary} {...props}>
+    <div
+      id={id}
+      onClick={onClick}
+      className={`p-2 rounded-md inline-block cursor-pointer ${buttonColor} ${bgColor}`}
+      {...props}
+    >
       toolbar example
-    </ToolbarButton>
+    </div>
   );
 };
 
