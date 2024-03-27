@@ -2,11 +2,9 @@ import React, { FC } from "react";
 import Toolbar, { ToolbarProps } from "../Toolbar";
 
 const Example: FC<ToolbarProps> = ({
-  disabled = false,
+  id = "Toolbar",
   onClick = () => {},
   primary = true,
-  size = "small",
-  text = "Toolbar",
 }) => {
   return (
     <div
@@ -17,13 +15,7 @@ const Example: FC<ToolbarProps> = ({
         height: "100%",
       }}
     >
-      <Toolbar
-        size={size}
-        text={text}
-        disabled={disabled}
-        onClick={onClick}
-        primary={primary}
-      />
+      <Toolbar id={id} onClick={onClick} primary={primary} />
     </div>
   );
 };

@@ -1,13 +1,7 @@
 import React, { FC } from "react";
 import Annotator, { AnnotatorProps } from "../Annotator";
 
-const Example: FC<AnnotatorProps> = ({
-  disabled = false,
-  onClick = () => {},
-  primary = true,
-  size = "small",
-  text = "Annotator",
-}) => {
+const Example: FC<AnnotatorProps> = ({ id, primary = true }) => {
   return (
     <div
       style={{
@@ -15,15 +9,10 @@ const Example: FC<AnnotatorProps> = ({
         justifyContent: "center",
         alignItems: "center",
         height: "100%",
+        width: "100%",
       }}
     >
-      <Annotator
-        size={size}
-        text={text}
-        disabled={disabled}
-        onClick={onClick}
-        primary={primary}
-      />
+      <Annotator id={id} primary={primary} />
     </div>
   );
 };
