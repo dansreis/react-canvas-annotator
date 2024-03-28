@@ -12,6 +12,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onClick,
   ...props
 }) => {
+  // TODO: This is not working.. fix this!
   // Determine button color and background color based on primary prop
   const buttonColor = primary ? "text-white" : "text-black";
   const bgColor = primary ? "bg-red-600" : "bg-gray-300";

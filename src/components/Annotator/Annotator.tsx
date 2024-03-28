@@ -1,4 +1,5 @@
 import React from "react";
+import { Box, Typography } from "@mui/material";
 
 export type AnnotatorProps = {
   id?: string;
@@ -16,14 +17,22 @@ const Annotator: React.FC<AnnotatorProps> = ({ id, primary, ...props }) => {
   const stackMenuClasses = "bg-gray-400 w-1/6 p-4";
 
   return (
-    <div id={id} className={`w-full ${baseClasses}`} {...props}>
-      <div className={headerClasses}>Header</div>
-      <div className={containerClasses}>
-        <div className={toolbarClasses}>Toolbar</div>
-        <div className={canvasContainerClasses}>CanvasContainer</div>
-        <div className={stackMenuClasses}>Stack Menu</div>
-      </div>
-    </div>
+    <Box id={id} className={`w-full ${baseClasses}`} {...props}>
+      <Box className={headerClasses}>
+        <Typography variant="h6">Header</Typography>
+      </Box>
+      <Box className={containerClasses}>
+        <Box className={toolbarClasses}>
+          <Typography>Toolbar</Typography>
+        </Box>
+        <Box className={canvasContainerClasses}>
+          <Typography>CanvasContainer</Typography>
+        </Box>
+        <Box className={stackMenuClasses}>
+          <Typography>Stack Menu</Typography>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 
