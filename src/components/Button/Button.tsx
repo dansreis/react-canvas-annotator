@@ -1,15 +1,14 @@
-import React from "react";
-import Button from "@mui/material/Button";
+import React, { MouseEventHandler } from "react";
 
 export type ButtonProps = {
   text?: string;
   primary?: boolean;
   disabled?: boolean;
   size?: "small" | "medium" | "large";
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 };
 
-const MyButton: React.FC<ButtonProps> = ({
+const Button: React.FC<ButtonProps> = ({
   size,
   primary,
   disabled,
@@ -19,30 +18,31 @@ const MyButton: React.FC<ButtonProps> = ({
 }) => {
   // Determine button color and background color based on primary prop
   const buttonColor = primary ? "text-white" : "text-black";
-  const bgColor = primary ? "#2196f3" : "#4caf50"; // Adjust colors according to Material-UI theme
+  const bgColor = primary ? "bg-blue-500" : "bg-green-500";
 
   // Determine padding based on size prop
-  let paddingStyle = {};
+  let paddingClass = "";
   if (size === "small") {
-    paddingStyle = { padding: "6px 16px" };
+    paddingClass = "py-1 px-6";
   } else if (size === "medium") {
-    paddingStyle = { padding: "8px 24px" };
+    paddingClass = "py-2 px-8";
   } else {
-    paddingStyle = { padding: "10px 24px" };
+    paddingClass = "py-3 px-8";
   }
 
   return (
-    <Button
-      variant="contained"
-      color="primary"
-      disabled={disabled}
-      onClick={onClick}
-      style={{ ...paddingStyle, backgroundColor: bgColor, color: buttonColor }}
-      {...props}
-    >
-      {text}
-    </Button>
+    <>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`border-0 font-semibold rounded-lg inline-block cursor-pointer ${buttonColor} ${bgColor} ${paddingClass}`}
+        {...props}
+      >
+        {text}
+      </button>
+    </>
   );
 };
 
-export default MyButton;
+export default Button;

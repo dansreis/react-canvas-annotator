@@ -1,12 +1,11 @@
-import Button from "@mui/material/Button";
-import React from "react";
+import React, { MouseEventHandler } from "react";
 
 export type AnnotatorMenuItemProps = {
   text?: string;
   primary?: boolean;
   disabled?: boolean;
   size?: "small" | "medium" | "large";
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 };
 
 const AnnotatorMenuItem: React.FC<AnnotatorMenuItemProps> = ({
@@ -32,16 +31,15 @@ const AnnotatorMenuItem: React.FC<AnnotatorMenuItemProps> = ({
   }
 
   return (
-    <Button
-      variant="contained"
-      color="primary"
+    <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`${buttonColor} ${bgColor} ${paddingClass}`}
+      className={`border-0 font-semibold rounded-lg inline-block cursor-pointer ${buttonColor} ${bgColor} ${paddingClass}`}
       {...props}
     >
       {text}
-    </Button>
+    </button>
   );
 };
 

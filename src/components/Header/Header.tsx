@@ -1,13 +1,11 @@
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-import React from "react";
+import React, { MouseEventHandler } from "react";
 
 export type HeaderProps = {
   text?: string;
   primary?: boolean;
   disabled?: boolean;
   size?: "small" | "medium" | "large";
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 };
 
 const Header: React.FC<HeaderProps> = ({
@@ -34,19 +32,16 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <Typography variant="h1" className="text-3xl font-bold underline">
-        Hello world!
-      </Typography>
-      <Button
-        variant="contained"
-        color="primary"
+      <h1 className="text-3xl font-bold underline">Hello world!</h1>
+      <button
+        type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`${buttonColor} ${bgColor} ${paddingClass}`}
+        className={`border-0 font-semibold rounded-lg inline-block cursor-pointer ${buttonColor} ${bgColor} ${paddingClass}`}
         {...props}
       >
         {text}
-      </Button>
+      </button>
     </>
   );
 };
