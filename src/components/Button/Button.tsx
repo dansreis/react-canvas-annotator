@@ -1,5 +1,7 @@
 import React, { MouseEventHandler } from "react";
 import styled from "styled-components";
+import { FaDrawPolygon } from "react-icons/fa";
+import tokens from "../../tokens";
 
 export type ButtonProps = {
   text?: string;
@@ -17,15 +19,22 @@ const StyledButton = styled.button<ButtonProps>`
   font-weight: 700;
   font-weight: bold;
   border-radius: 10px;
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   color: ${(props) => (props.primary ? "#fff" : "#000")};
   background-color: ${(props) => (props.primary ? "#FF5655" : "#f4c4c4")};
   padding: ${(props) =>
     props.size === "small"
-      ? "7px 25px 8px"
+      ? tokens.size.small
       : props.size === "medium"
-        ? "9px 30px 11px"
-        : "14px 30px 16px"};
+        ? tokens.size.medium
+        : tokens.size.large};
+`;
+
+const Icon = styled.span`
+  margin-right: 5px; /* Adjust the margin as needed */
 `;
 
 const Button: React.FC<ButtonProps> = ({
@@ -45,6 +54,9 @@ const Button: React.FC<ButtonProps> = ({
       size={size}
       {...props}
     >
+      <Icon>
+        <FaDrawPolygon />
+      </Icon>
       {text}
     </StyledButton>
   );
