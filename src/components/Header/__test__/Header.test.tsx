@@ -5,7 +5,7 @@ import Header from "../Header";
 
 describe("Header component", () => {
   it("Header should render correctly", () => {
-    render(<Header />);
+    render(<Header items={[]} />);
     const header = screen.getByRole("header");
     expect(header).toBeInTheDocument();
   });

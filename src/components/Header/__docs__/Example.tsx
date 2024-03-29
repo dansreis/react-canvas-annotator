@@ -2,11 +2,11 @@ import React, { FC } from "react";
 import Header, { HeaderProps } from "../Header";
 
 const Example: FC<HeaderProps> = ({
-  disabled = false,
-  onClick = () => {},
   primary = true,
-  size = "small",
-  text = "Header",
+  size = "medium",
+  items = [
+    { icon: "circle", text: "Text", onClick: () => console.log("Text") },
+  ],
 }) => {
   return (
     <div
@@ -17,13 +17,7 @@ const Example: FC<HeaderProps> = ({
         height: "100%",
       }}
     >
-      <Header
-        size={size}
-        text={text}
-        disabled={disabled}
-        onClick={onClick}
-        primary={primary}
-      />
+      <Header primary={primary} items={items} size={size} />
     </div>
   );
 };

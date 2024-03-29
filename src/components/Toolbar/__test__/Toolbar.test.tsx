@@ -5,7 +5,7 @@ import Toolbar from "../Toolbar";
 
 describe("Toolbar component", () => {
   it("Toolbar should render correctly", () => {
-    render(<Toolbar />);
+    render(<Toolbar items={[]} />);
     const toolbar = screen.getByRole("toolbar");
     expect(toolbar).toBeInTheDocument();
   });

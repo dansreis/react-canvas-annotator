@@ -20,9 +20,9 @@ import {Header} from "react-image-annotator";
 const Example = () => {
   return (
       <Header
+        items=[{ icon: "circle", text: "Text", onClick: () => console.log("Text") }]
         size={"small"}
         text={"Header"}
-        onClick={()=> console.log("Clicked")}
         primary
       />
   );

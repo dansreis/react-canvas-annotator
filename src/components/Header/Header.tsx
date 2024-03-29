@@ -1,48 +1,58 @@
-import React, { MouseEventHandler } from "react";
+import React, { MouseEventHandler, useState } from "react";
+import styled from "styled-components";
+import ToolbarItem, { ToolbarIconTypes } from "../ToolbarItem/ToolbarItem";
+import tokens from "../../tokens";
 
 export type HeaderProps = {
-  text?: string;
   primary?: boolean;
-  disabled?: boolean;
+  items: {
+    icon: ToolbarIconTypes;
+    text: string;
+    selected?: boolean;
+    onClick?: MouseEventHandler<HTMLButtonElement>;
+  }[];
   size?: "small" | "medium" | "large";
-  onClick?: MouseEventHandler<HTMLButtonElement>;
 };
 
+const StyledDiv = styled.div<Omit<HeaderProps, "items">>`
+  display: flex;
+  flex-direction: column;
+  background-color: ${(props) =>
+    props.primary
+      ? tokens.primary.backgroundColor
+      : tokens.secondary.backgroundColor};
+  padding: 5px;
+  height: max-content;
+  gap: 10px;
+`;
+
 const Header: React.FC<HeaderProps> = ({
-  size,
   primary,
-  disabled,
-  text,
-  onClick,
+  items,
+  size = "medium",
   ...props
 }) => {
-  // Determine button color and background color based on primary prop
-  const buttonColor = primary ? "text-white" : "text-black";
-  const bgColor = primary ? "bg-red-600" : "bg-gray-300";
-
-  // Determine padding based on size prop
-  let paddingClass = "";
-  if (size === "small") {
-    paddingClass = "py-1 px-6";
-  } else if (size === "medium") {
-    paddingClass = "py-2 px-8";
-  } else {
-    paddingClass = "py-3 px-8";
-  }
+  const [selectedItem, setSelectedItem] = useState<number | undefined>(
+    items.findIndex((i) => i.selected == true),
+  );
 
   return (
-    <>
-      <h1 className="text-3xl font-bold underline">Hello world!</h1>
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        className={`border-0 font-semibold rounded-lg inline-block cursor-pointer ${buttonColor} ${bgColor} ${paddingClass}`}
-        {...props}
-      >
-        {text}
-      </button>
-    </>
+    <StyledDiv primary={primary} {...props}>
+      {items.map(({ icon, text, onClick }, index) => (
+        <ToolbarItem
+          key={index}
+          iconName={icon}
+          text={text}
+          primary={primary}
+          size={size}
+          active={selectedItem === index}
+          onClick={(event) => {
+            setSelectedItem(index);
+            onClick?.(event);
+          }}
+        />
+      ))}
+    </StyledDiv>
   );
 };
 
