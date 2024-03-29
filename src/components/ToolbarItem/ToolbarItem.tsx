@@ -5,15 +5,17 @@ import { PiRectangle, PiCircle } from "react-icons/pi";
 import { IoHandRightOutline } from "react-icons/io5";
 import { LiaMousePointerSolid } from "react-icons/lia";
 
-const ICONS = {
+const ToolbarIcons = {
   rectangle: PiRectangle,
   circle: PiCircle,
   hand: IoHandRightOutline,
   pointer: LiaMousePointerSolid,
 };
 
+export type ToolbarIconTypes = keyof typeof ToolbarIcons;
+
 export type ToolbarItemProps = {
-  iconName: keyof typeof ICONS;
+  iconName: ToolbarIconTypes;
   text?: string;
   primary?: boolean;
   active?: boolean;
@@ -106,7 +108,7 @@ const ToolbarItem: React.FC<ToolbarItemProps> = ({
   onClick,
   ...props
 }) => {
-  const DynamicIcon = ICONS[iconName ?? "rectangle"];
+  const DynamicIcon = ToolbarIcons[iconName];
 
   return (
     <StyledDiv

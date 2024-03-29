@@ -11,15 +11,26 @@ type Story = StoryObj<typeof Example>;
 
 export const Primary: Story = {
   args: {
-    id: "Toolbar - p",
     primary: true,
-    onClick: () => console.log("Toolbar"),
+    items: [
+      { icon: "hand", text: "Move", onClick: () => console.log("Move") },
+      {
+        icon: "pointer",
+        text: "Pointer",
+        onClick: () => console.log("Pointer"),
+      },
+      {
+        icon: "rectangle",
+        text: "Annotate",
+        onClick: () => console.log("Annotate"),
+      },
+    ],
   },
 };
+
 export const Secondary: Story = {
   args: {
-    id: "Toolbar - s",
+    ...Primary.args,
     primary: false,
-    onClick: () => console.log("Toolbar"),
   },
 };

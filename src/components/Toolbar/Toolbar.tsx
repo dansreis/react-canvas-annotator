@@ -1,30 +1,58 @@
-import React, { MouseEventHandler } from "react";
+import React, { MouseEventHandler, useState } from "react";
+import styled from "styled-components";
+import ToolbarItem, { ToolbarIconTypes } from "../ToolbarItem/ToolbarItem";
+import tokens from "../../tokens";
 
 export type ToolbarProps = {
-  id?: string;
   primary?: boolean;
-  onClick?: MouseEventHandler<HTMLDivElement>;
+  items: {
+    icon: ToolbarIconTypes;
+    text: string;
+    selected?: boolean;
+    onClick?: MouseEventHandler<HTMLButtonElement>;
+  }[];
+  size?: "small" | "medium" | "large";
 };
 
+const StyledDiv = styled.div<Omit<ToolbarProps, "items">>`
+  display: flex;
+  flex-direction: column;
+  background-color: ${(props) =>
+    props.primary
+      ? tokens.primary.backgroundColor
+      : tokens.secondary.backgroundColor};
+  padding: 5px;
+  height: max-content;
+  gap: 10px;
+`;
+
 const Toolbar: React.FC<ToolbarProps> = ({
-  id,
   primary,
-  onClick,
+  items,
+  size = "medium",
   ...props
 }) => {
-  // Determine button color and background color based on primary prop
-  const buttonColor = primary ? "text-white" : "text-black";
-  const bgColor = primary ? "bg-red-600" : "bg-gray-300";
+  const [selectedItem, setSelectedItem] = useState<number | undefined>(
+    items.findIndex((i) => i.selected == true),
+  );
 
   return (
-    <div
-      id={id}
-      onClick={onClick}
-      className={`p-2 rounded-md inline-block cursor-pointer ${buttonColor} ${bgColor}`}
-      {...props}
-    >
-      toolbar example
-    </div>
+    <StyledDiv primary={primary} {...props}>
+      {items.map(({ icon, text, onClick }, index) => (
+        <ToolbarItem
+          key={index}
+          iconName={icon}
+          text={text}
+          primary={primary}
+          size={size}
+          active={selectedItem === index}
+          onClick={(event) => {
+            setSelectedItem(index);
+            onClick?.(event);
+          }}
+        />
+      ))}
+    </StyledDiv>
   );
 };
 
