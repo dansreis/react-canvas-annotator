@@ -1,18 +1,9 @@
 import React, { MouseEventHandler } from "react";
 import styled from "styled-components";
 import tokens from "../../tokens";
-import { PiRectangle, PiCircle } from "react-icons/pi";
-import { IoHandRightOutline } from "react-icons/io5";
-import { LiaMousePointerSolid } from "react-icons/lia";
+import { AvailableIcons } from "../../utils";
 
-const ToolbarIcons = {
-  rectangle: PiRectangle,
-  circle: PiCircle,
-  hand: IoHandRightOutline,
-  pointer: LiaMousePointerSolid,
-};
-
-export type ToolbarIconTypes = keyof typeof ToolbarIcons;
+export type ToolbarIconTypes = keyof typeof AvailableIcons;
 
 export type ToolbarItemProps = {
   iconName: ToolbarIconTypes;
@@ -73,26 +64,6 @@ const StyledDiv = styled.div<Omit<ToolbarItemProps, "iconName">>`
         ? tokens.primary.activeColor
         : tokens.secondary.activeColor};
   }
-
-  /* &:disabled {
-    background-color: gray;
-    background-image: repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 1px,
-        rgba(255, 255, 255, 0.556) 1px,
-        rgba(255, 255, 255, 0.556) 3px
-      ),
-      repeating-linear-gradient(
-        -45deg,
-        transparent,
-        transparent 1px,
-        rgba(255, 255, 255, 0.556) 1px,
-        rgba(255, 255, 255, 0.556) 3px
-      );
-
-    cursor: not-allowed;
-  } */
 `;
 
 const IconContainer = styled.span`
@@ -108,7 +79,7 @@ const ToolbarItem: React.FC<ToolbarItemProps> = ({
   onClick,
   ...props
 }) => {
-  const DynamicIcon = ToolbarIcons[iconName];
+  const DynamicIcon = AvailableIcons[iconName];
 
   return (
     <StyledDiv
@@ -119,7 +90,7 @@ const ToolbarItem: React.FC<ToolbarItemProps> = ({
       {...props}
     >
       <IconContainer>
-        <DynamicIcon size={20} />
+        <DynamicIcon size={tokens.icon.medium} />
       </IconContainer>
       {text}
     </StyledDiv>

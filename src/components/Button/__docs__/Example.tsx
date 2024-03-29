@@ -5,6 +5,7 @@ const Example: FC<ButtonProps> = ({
   disabled = false,
   onClick = () => {},
   primary = true,
+  iconName,
   size = "small",
   text = "Button",
 }) => {
@@ -21,6 +22,7 @@ const Example: FC<ButtonProps> = ({
         size={size}
         text={text}
         disabled={disabled}
+        iconName={iconName}
         onClick={onClick}
         primary={primary}
       />

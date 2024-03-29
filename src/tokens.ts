@@ -19,6 +19,11 @@ const tokens = {
     medium: 14,
     large: 16,
   },
+  icon: {
+    small: 12,
+    medium: 16,
+    large: 20,
+  },
 };
 
 export default tokens;

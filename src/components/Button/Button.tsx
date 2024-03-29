@@ -1,11 +1,11 @@
 import React, { MouseEventHandler } from "react";
 import styled from "styled-components";
-import { FaDrawPolygon } from "react-icons/fa";
 import tokens from "../../tokens";
-import { arrayToRGBA } from "../../utils";
+import { arrayToRGBA, AvailableIcons } from "../../utils";
 
 export type ButtonProps = {
   text?: string;
+  iconName?: keyof typeof AvailableIcons;
   primary?: boolean;
   disabled?: boolean;
   size?: "small" | "medium" | "large";
@@ -81,21 +81,6 @@ const StyledButton = styled.button<ButtonProps>`
         ${arrayToRGBA(props.primary ? tokens.primary.backgroundColor : tokens.secondary.backgroundColor, 0.7)} 3px
       );`}; // Adjust hover color
 
-    /* background-image: repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 1px,
-        rgba(255, 255, 255, 0.8) 1px,
-        rgba(255, 255, 255, 0.8) 5px
-      ),
-      repeating-linear-gradient(
-        -45deg,
-        transparent,
-        transparent 1px,
-        rgba(255, 255, 255, 0.8) 1px,
-        rgba(255, 255, 255, 0.8) 5px
-      ); */
-
     cursor: not-allowed;
   }
 `;
@@ -103,6 +88,7 @@ const StyledButton = styled.button<ButtonProps>`
 const IconContainer = styled.span``;
 
 const Button: React.FC<ButtonProps> = ({
+  iconName,
   size,
   primary,
   disabled,
@@ -110,6 +96,7 @@ const Button: React.FC<ButtonProps> = ({
   onClick,
   ...props
 }) => {
+  const DynamicIcon = AvailableIcons[iconName!];
   return (
     <StyledButton
       type="button"
@@ -119,9 +106,12 @@ const Button: React.FC<ButtonProps> = ({
       size={size}
       {...props}
     >
-      <IconContainer>
-        <FaDrawPolygon size={16} />
-      </IconContainer>
+      {iconName ? (
+        <IconContainer>
+          <DynamicIcon size={tokens.icon.medium} />
+        </IconContainer>
+      ) : undefined}
+
       {text}
     </StyledButton>
   );

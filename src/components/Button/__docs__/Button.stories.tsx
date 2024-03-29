@@ -12,6 +12,7 @@ type Story = StoryObj<typeof Example>;
 export const Primary: Story = {
   args: {
     text: "Button Primary",
+    iconName: "polygon",
     primary: true,
     disabled: false,
     size: "medium",
@@ -21,6 +22,7 @@ export const Primary: Story = {
 export const Secondary: Story = {
   args: {
     ...Primary.args,
+    iconName: "rectangle",
     text: "Button Secondary",
     onClick: () => console.log("Button Secondary"),
   },
@@ -29,6 +31,7 @@ export const Secondary: Story = {
 export const Disabled: Story = {
   args: {
     ...Primary.args,
+    iconName: "polygon",
     disabled: true,
   },
 };

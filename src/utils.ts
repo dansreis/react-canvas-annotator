@@ -1,3 +1,8 @@
+import { PiRectangle, PiCircle } from "react-icons/pi";
+import { IoHandRightOutline } from "react-icons/io5";
+import { LiaMousePointerSolid } from "react-icons/lia";
+import { FaDrawPolygon } from "react-icons/fa";
+
 export const arrayToRGBA = (hex: string, alpha: number) => {
   // Remove '#' if present
   const tmpHex = hex.replace("#", "");
@@ -12,4 +17,12 @@ export const arrayToRGBA = (hex: string, alpha: number) => {
 
   // Construct RGBA string
   return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
+};
+
+export const AvailableIcons = {
+  rectangle: PiRectangle,
+  circle: PiCircle,
+  hand: IoHandRightOutline,
+  pointer: LiaMousePointerSolid,
+  polygon: FaDrawPolygon,
 };
