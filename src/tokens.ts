@@ -5,22 +5,19 @@ const tokens = {
     backgroundColor: "#ffffff",
     hoverColor: "#eeeeee",
     activeColor: "#bebebe",
+    disabledColor: "#808080",
   },
   secondary: {
     color: "#eeeeee",
     backgroundColor: "#000000",
-    hoverColor: "#8e8e8e",
-    activeColor: "#5f5f5f",
+    hoverColor: "#5f5f5f",
+    activeColor: "#8e8e8e",
+    disabledColor: "#808080",
   },
   font: {
     small: 12,
     medium: 14,
     large: 16,
-  },
-  size: {
-    small: "7px 30px 8px",
-    medium: "9px 35px 11px",
-    large: "14px 45px 16px",
   },
 };
 

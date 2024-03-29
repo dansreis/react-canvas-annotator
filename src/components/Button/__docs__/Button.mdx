@@ -10,7 +10,7 @@ Button component with different props.
 
 #### Example
 
-<Canvas of={Button.Primary} />
+<Canvas of={Button.Disabled} />
 
 ## Usage
 
@@ -20,9 +20,10 @@ import {Button} from "react-image-annotator";
 const Example = () => {
   return (
       <Button
-        size={"small"}
-        text={"Button"}
+        size={"medium"}
+        text={"Button Primary"}
         onClick={()=> console.log("Clicked")}
+        disabled
         primary
       />
   );
