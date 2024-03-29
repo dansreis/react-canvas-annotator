@@ -1,12 +1,21 @@
 const tokens = {
   light: "mediumseagreen",
   primary: {
-    color: "#fff",
-    backgroundColor: "#FF5655",
+    color: "#171717",
+    backgroundColor: "#ffffff",
+    hoverColor: "#eeeeee",
+    activeColor: "#bebebe",
   },
   secondary: {
-    color: "#000",
-    backgroundColor: "#f4c4c4",
+    color: "#eeeeee",
+    backgroundColor: "#000000",
+    hoverColor: "#8e8e8e",
+    activeColor: "#5f5f5f",
+  },
+  font: {
+    small: 12,
+    medium: 14,
+    large: 16,
   },
   size: {
     small: "7px 30px 8px",

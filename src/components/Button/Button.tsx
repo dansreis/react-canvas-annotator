@@ -12,14 +12,22 @@ export type ButtonProps = {
 };
 
 const StyledButton = styled.button<ButtonProps>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   border: 0;
   line-height: 1;
-  font-size: 15px;
+  font-size: ${(props) =>
+    props.size === "small"
+      ? `${tokens.font.small}px`
+      : props.size === "medium"
+        ? `${tokens.font.medium}px`
+        : `${tokens.font.large}px`};
   cursor: pointer;
   font-weight: 700;
   font-weight: bold;
   border-radius: 10px;
-  display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
@@ -31,10 +39,39 @@ const StyledButton = styled.button<ButtonProps>`
       : props.size === "medium"
         ? tokens.size.medium
         : tokens.size.large};
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: ${(props) =>
+      props.primary ? "#ff3635" : "#d9b3b3"}; // Adjust hover color
+  }
+  &:active {
+    background-color: #3e8e41;
+  }
+
+  /* &:disabled {
+    background-color: gray;
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 1px,
+        rgba(255, 255, 255, 0.556) 1px,
+        rgba(255, 255, 255, 0.556) 3px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 1px,
+        rgba(255, 255, 255, 0.556) 1px,
+        rgba(255, 255, 255, 0.556) 3px
+      );
+
+    cursor: not-allowed;
+  } */
 `;
 
-const Icon = styled.span`
-  margin-right: 5px; /* Adjust the margin as needed */
+const IconContainer = styled.span`
+  margin-bottom: 5px; // Adjust the margin as needed
 `;
 
 const Button: React.FC<ButtonProps> = ({
@@ -54,9 +91,9 @@ const Button: React.FC<ButtonProps> = ({
       size={size}
       {...props}
     >
-      <Icon>
-        <FaDrawPolygon />
-      </Icon>
+      <IconContainer>
+        <FaDrawPolygon size={16} />
+      </IconContainer>
       {text}
     </StyledButton>
   );

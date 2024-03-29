@@ -1,14 +1,13 @@
 import React, { FC } from "react";
-import AnnotatorMenuItem, {
-  AnnotatorMenuItemProps,
-} from "../AnnotatorMenuItem";
+import MenuItem, { MenuItemProps } from "../MenuItem";
 
-const Example: FC<AnnotatorMenuItemProps> = ({
-  disabled = false,
+const Example: FC<MenuItemProps> = ({
+  active = false,
   onClick = () => {},
   primary = true,
   size = "small",
-  text = "AnnotatorMenuItem",
+  text = "MenuItem",
+  iconName = "rectangle",
 }) => {
   return (
     <div
@@ -19,12 +18,13 @@ const Example: FC<AnnotatorMenuItemProps> = ({
         height: "100%",
       }}
     >
-      <AnnotatorMenuItem
+      <MenuItem
         size={size}
         text={text}
-        disabled={disabled}
+        active={active}
         onClick={onClick}
         primary={primary}
+        iconName={iconName}
       />
     </div>
   );
