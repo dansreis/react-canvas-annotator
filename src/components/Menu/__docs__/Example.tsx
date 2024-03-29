@@ -1,12 +1,12 @@
 import React, { FC } from "react";
-import AnnotatorCanvas, { AnnotatorCanvasProps } from "../AnnotatorCanvas";
+import Menu, { MenuProps } from "../Menu";
 
-const Example: FC<AnnotatorCanvasProps> = ({
+const Example: FC<MenuProps> = ({
   disabled = false,
   onClick = () => {},
   primary = true,
   size = "small",
-  text = "Button",
+  text = "Menu",
 }) => {
   return (
     <div
@@ -17,7 +17,7 @@ const Example: FC<AnnotatorCanvasProps> = ({
         height: "100%",
       }}
     >
-      <AnnotatorCanvas
+      <Menu
         size={size}
         text={text}
         disabled={disabled}

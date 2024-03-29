@@ -1,25 +1,25 @@
 import { Canvas, Meta } from "@storybook/blocks";
 import Example from "./Example.tsx";
-import * as AnnotatorCanvas from "./AnnotatorCanvas.stories.tsx";
+import * as Board from "./Board.stories.tsx";
 
-<Meta of={AnnotatorCanvas} title="AnnotatorCanvas" />
+<Meta of={Board} title="Board" />
 
-# AnnotatorCanvas
+# Board
 
 Button component with different props.
 
 #### Example
 
-<Canvas of={AnnotatorCanvas.Primary} />
+<Canvas of={Board.Primary} />
 
 ## Usage
 
 ```ts
-import {AnnotatorCanvas} from "sld-ui";
+import {Board} from "react-image-annotator";
 
 const Example = () => {
   return (
-      <Button
+      <Board
         size={"small"}
         text={"Button"}
         onClick={()=> console.log("Clicked")}

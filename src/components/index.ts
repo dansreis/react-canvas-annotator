@@ -1,4 +1,4 @@
 export * from "./Annotator";
-export * from "./AnnotatorCanvas";
+export * from "./Board";
 export * from "./Button";
 export * from "./Header";

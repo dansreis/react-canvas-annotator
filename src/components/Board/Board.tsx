@@ -1,6 +1,6 @@
 import React, { MouseEventHandler } from "react";
 
-export type AnnotatorMenuProps = {
+export type BoardProps = {
   text?: string;
   primary?: boolean;
   disabled?: boolean;
@@ -8,7 +8,7 @@ export type AnnotatorMenuProps = {
   onClick?: MouseEventHandler<HTMLButtonElement>;
 };
 
-const AnnotatorMenu: React.FC<AnnotatorMenuProps> = ({
+const Board: React.FC<BoardProps> = ({
   size,
   primary,
   disabled,
@@ -43,4 +43,4 @@ const AnnotatorMenu: React.FC<AnnotatorMenuProps> = ({
   );
 };
 
-export default AnnotatorMenu;
+export default Board;

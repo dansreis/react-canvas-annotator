@@ -1,27 +1,27 @@
 import { Canvas, Meta } from "@storybook/blocks";
 import Example from "./Example.tsx";
-import * as AnnotatorMenu from "./AnnotatorMenu.stories.tsx";
+import * as Menu from "./Menu.stories.tsx";
 
-<Meta of={AnnotatorMenu} title="AnnotatorMenu" />
+<Meta of={Menu} title="Menu" />
 
-# AnnotatorMenu
+# Menu
 
-AnnotatorMenu component with different props.
+Menu component with different props.
 
 #### Example
 
-<Canvas of={AnnotatorMenu.Primary} />
+<Canvas of={Menu.Primary} />
 
 ## Usage
 
 ```ts
-import {AnnotatorMenu} from "sld-ui";
+import {Menu} from "react-image-annotator";
 
 const Example = () => {
   return (
-      <AnnotatorMenu
+      <Menu
         size={"small"}
-        text={"AnnotatorMenu"}
+        text={"Menu"}
         onClick={()=> console.log("Clicked")}
         primary
       />

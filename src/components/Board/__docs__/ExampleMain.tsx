@@ -1,12 +1,12 @@
 import React, { FC, useEffect, useState } from "react";
 import { fabric } from "fabric";
-import { AnnotatorCanvasProps } from "../AnnotatorCanvas";
+import { BoardProps } from "../Board";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 
 const WIDTH = 800;
 const HEIGHT = 500;
 
-const ExampleMain: FC<AnnotatorCanvasProps> = ({
+const ExampleMain: FC<BoardProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   disabled = false,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
