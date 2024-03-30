@@ -9,28 +9,21 @@ const meta: Meta<typeof Example> = {
 export default meta;
 type Story = StoryObj<typeof Example>;
 
-export const Primary: Story = {
+export const Full: Story = {
   args: {
     primary: true,
-    items: [
-      { icon: "hand", text: "Move", onClick: () => console.log("Move") },
-      {
-        icon: "pointer",
-        text: "Pointer",
-        onClick: () => console.log("Pointer"),
-      },
-      {
-        icon: "rectangle",
-        text: "Annotate",
-        onClick: () => console.log("Annotate"),
-      },
-    ],
+    imageInfo: {
+      width: 1920,
+      height: 1080,
+    },
+    zoom: { value: 10, action: (e) => console.log(e) },
+    annotation: { value: true, action: (e) => console.log(e) },
   },
 };
 
 export const Secondary: Story = {
   args: {
-    ...Primary.args,
+    ...Full.args,
     primary: false,
   },
 };

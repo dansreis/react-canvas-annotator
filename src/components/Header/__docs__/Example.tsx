@@ -1,23 +1,17 @@
 import React, { FC } from "react";
 import Header, { HeaderProps } from "../Header";
 
-const Example: FC<HeaderProps> = ({
-  primary = true,
-  size = "medium",
-  items = [
-    { icon: "circle", text: "Text", onClick: () => console.log("Text") },
-  ],
-}) => {
+const Example: FC<HeaderProps> = (props) => {
   return (
     <div
       style={{
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        height: "100%",
+        width: "800px",
       }}
     >
-      <Header primary={primary} items={items} size={size} />
+      <Header {...props} />
     </div>
   );
 };

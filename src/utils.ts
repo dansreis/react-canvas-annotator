@@ -2,6 +2,9 @@ import { PiRectangle, PiCircle } from "react-icons/pi";
 import { IoHandRightOutline } from "react-icons/io5";
 import { LiaMousePointerSolid } from "react-icons/lia";
 import { FaDrawPolygon } from "react-icons/fa";
+import { GrZoomIn, GrZoomOut } from "react-icons/gr";
+import { TbZoomReset } from "react-icons/tb";
+import { TbMessageOff, TbMessage } from "react-icons/tb";
 
 export const arrayToRGBA = (hex: string, alpha: number) => {
   // Remove '#' if present
@@ -25,4 +28,9 @@ export const AvailableIcons = {
   hand: IoHandRightOutline,
   pointer: LiaMousePointerSolid,
   polygon: FaDrawPolygon,
+  zoomIn: GrZoomIn,
+  zoomOut: GrZoomOut,
+  zoomReset: TbZoomReset,
+  annotation: TbMessage,
+  annotationDisabled: TbMessageOff,
 };

@@ -1,57 +1,137 @@
-import React, { MouseEventHandler, useState } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
-import ToolbarItem, { ToolbarIconTypes } from "../ToolbarItem/ToolbarItem";
 import tokens from "../../tokens";
+import { Button } from "../Button";
 
 export type HeaderProps = {
   primary?: boolean;
-  items: {
-    icon: ToolbarIconTypes;
-    text: string;
-    selected?: boolean;
-    onClick?: MouseEventHandler<HTMLButtonElement>;
-  }[];
   size?: "small" | "medium" | "large";
+  imageInfo?: { width: number; height: number };
+  zoom?: { value: number; action?: (event: "in" | "out" | "reset") => void };
+  annotation?: { value: boolean; action: (event: "on" | "off") => void };
 };
 
-const StyledDiv = styled.div<Omit<HeaderProps, "items">>`
+const Divider = styled.div<HeaderProps>`
+  height: 80%;
+  width: 1px; /* Width of the divider */
+  /* Color of the divider */
+  background-color: ${(props) =>
+    props.primary
+      ? tokens.secondary.backgroundColor
+      : tokens.primary.backgroundColor};
+  margin: auto 10px; /* Adjust margin as needed */
+`;
+
+const StyledDiv = styled.div<HeaderProps>`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   background-color: ${(props) =>
     props.primary
       ? tokens.primary.backgroundColor
       : tokens.secondary.backgroundColor};
   padding: 5px;
-  height: max-content;
-  gap: 10px;
+  width: 100%;
+  gap: 3px;
+  justify-content: center;
+
+  height: ${(props) =>
+    props.size === "small"
+      ? "26px"
+      : props.size === "medium"
+        ? "32px"
+        : "36px"};
+`;
+
+const ZoomValue = styled.span<HeaderProps>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Roboto";
+  font-style: normal;
+  font-weight: 500;
+  min-width: 50px;
+  padding: 4px 8px;
+  color: ${(props) =>
+    props.primary ? tokens.primary.color : tokens.secondary.color};
+  border: ${(props) =>
+    props.primary
+      ? `1px solid ${tokens.primary.borderColor}`
+      : `1px solid ${tokens.secondary.borderColor}`};
+  border-radius: 4px;
+  text-align: center;
+`;
+
+const ImageInfo = styled.span<HeaderProps>`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Roboto";
+  font-style: normal;
+  font-weight: 500;
+  color: ${(props) =>
+    props.primary ? tokens.primary.lightColor : tokens.secondary.lightColor};
 `;
 
 const Header: React.FC<HeaderProps> = ({
   primary,
-  items,
   size = "medium",
+  imageInfo,
+  zoom,
+  annotation,
   ...props
 }) => {
-  const [selectedItem, setSelectedItem] = useState<number | undefined>(
-    items.findIndex((i) => i.selected == true),
-  );
+  const [annotationStatus, setAnnotationStatus] = useState(annotation?.value);
 
   return (
-    <StyledDiv primary={primary} {...props}>
-      {items.map(({ icon, text, onClick }, index) => (
-        <ToolbarItem
-          key={index}
-          iconName={icon}
-          text={text}
-          primary={primary}
-          size={size}
-          active={selectedItem === index}
-          onClick={(event) => {
-            setSelectedItem(index);
-            onClick?.(event);
-          }}
-        />
-      ))}
+    <StyledDiv primary={primary} size={size} {...props}>
+      {/* Show Image information */}
+      {imageInfo ? (
+        <>
+          <ImageInfo primary={primary}>
+            {imageInfo?.width}x{imageInfo?.height}px
+          </ImageInfo>
+        </>
+      ) : undefined}
+      {/* Allow Zoom */}
+      {zoom ? (
+        <>
+          <Divider primary={primary} />
+          <Button
+            primary={primary}
+            size={size}
+            iconName="zoomOut"
+            onClick={() => zoom?.action?.("out")}
+          />
+          <ZoomValue primary={primary}>{zoom.value} %</ZoomValue>
+          <Button
+            primary={primary}
+            size={size}
+            iconName="zoomIn"
+            onClick={() => zoom?.action?.("in")}
+          />
+          <Button
+            primary={primary}
+            size={size}
+            iconName="zoomReset"
+            onClick={() => zoom?.action?.("reset")}
+          />
+        </>
+      ) : undefined}
+      {/* Annotations */}
+      {annotation ? (
+        <>
+          <Divider primary={primary} />
+          <Button
+            primary={primary}
+            size={size}
+            iconName={annotationStatus ? "annotation" : "annotationDisabled"}
+            onClick={() => {
+              setAnnotationStatus(!annotationStatus);
+              annotation?.action?.(annotationStatus ? "on" : "off");
+            }}
+          />
+        </>
+      ) : undefined}
     </StyledDiv>
   );
 };
