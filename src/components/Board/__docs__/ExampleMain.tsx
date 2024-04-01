@@ -40,7 +40,7 @@ const ExampleMain: FC<BoardProps> = ({
     editor.canvas.defaultCursor = draggingEnabled ? "pointer" : "default";
 
     fabric.Image.fromURL(
-      "holder.jpg",
+      "holder-min.jpg",
       (img) => {
         const { canvas } = editor;
         const scaleRatio = Math.min(
