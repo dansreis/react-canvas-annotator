@@ -36,6 +36,9 @@ const ExampleMain: FC<BoardProps> = ({
     editor.canvas.setWidth(WIDTH);
     editor.canvas.setHeight(HEIGHT);
 
+    // Change the cursor
+    editor.canvas.defaultCursor = draggingEnabled ? "pointer" : "default";
+
     fabric.Image.fromURL(
       "holder.jpg",
       (img) => {
@@ -99,6 +102,7 @@ const ExampleMain: FC<BoardProps> = ({
       opt.e.preventDefault();
       opt.e.stopPropagation();
     });
+
     editor.canvas.on("mouse:up", function (opt) {
       this.isDragging = false;
       this.selection = true;
