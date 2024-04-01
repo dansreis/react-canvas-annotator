@@ -83,7 +83,7 @@ const Header: React.FC<HeaderProps> = ({
   const [annotationStatus, setAnnotationStatus] = useState(annotation?.value);
 
   return (
-    <StyledDiv primary={primary} size={size} {...props}>
+    <StyledDiv role={"header"} primary={primary} size={size} {...props}>
       {/* Show Image information */}
       {imageInfo ? (
         <>

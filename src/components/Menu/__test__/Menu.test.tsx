@@ -6,7 +6,7 @@ import Menu from "../Menu";
 describe("Menu component", () => {
   it("Menu should render correctly", () => {
     render(<Menu />);
-    const menu = screen.getByRole("Menu");
+    const menu = screen.getByRole("menu");
     expect(menu).toBeInTheDocument();
   });
 });

@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import ToolbarItem from "../ToolbarItem";
 
-describe("MenuItem component", () => {
-  it("MenuItem should render correctly", () => {
+describe("ToolbarItem component", () => {
+  it("ToolbarItem should render correctly", () => {
     render(<ToolbarItem iconName={"circle"} />);
-    const Item = screen.getByRole("ToolbarItem");
-    expect(Item).toBeInTheDocument();
+    const item = screen.getByRole("toolbar-item");
+    expect(item).toBeInTheDocument();
   });
 });

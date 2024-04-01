@@ -37,7 +37,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   );
 
   return (
-    <StyledDiv primary={primary} {...props}>
+    <StyledDiv role={"toolbar"} primary={primary} {...props}>
       {items.map(({ icon, text, onClick }, index) => (
         <ToolbarItem
           key={index}

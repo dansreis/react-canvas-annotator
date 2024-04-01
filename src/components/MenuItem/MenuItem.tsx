@@ -110,6 +110,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
 
   return (
     <StyledDiv
+      role="menu-item"
       onClick={onClick}
       primary={primary}
       active={active}

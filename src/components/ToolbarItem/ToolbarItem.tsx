@@ -83,6 +83,7 @@ const ToolbarItem: React.FC<ToolbarItemProps> = ({
 
   return (
     <StyledDiv
+      role="toolbar-item"
       onClick={onClick}
       primary={primary}
       active={active}

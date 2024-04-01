@@ -32,6 +32,7 @@ const Menu: React.FC<MenuProps> = ({
 
   return (
     <button
+      role="menu"
       type="button"
       onClick={onClick}
       disabled={disabled}

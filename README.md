@@ -1,20 +1,22 @@
-# React Image Annotator
+<div align="center">
+<img src="./logo.svg" alt="react-image-annotator" />
+</div>
 
 [![Build Status](https://github.com/dansreis/react-image-annotator/actions/workflows/main.yml/badge.svg)](https://github.com/dansreis/react-image-annotator/actions)
 
 ## Features
 
-- [ ] Simple input/output format
-- [ ] Bounding Box, Point and Polygon Annotation
-- [ ] Zooming, Scaling, Panning
-- [ ] Multiple Images
-- [ ] Cursor Crosshair
+- [X] Annotations on image
+- [ ] Bounding Box Annotation
+- [ ] Point and Polygon Annotation
+- [ ] image zoom and drag
+- [ ] Categorize annotations with colors and label
 
 ![Screenshot of Annotator](https://user-images.githubusercontent.com/1910070/51199716-83c72080-18c5-11e9-837c-c3a89c8caef4.png)
 
 ## Usage
 
-`npm install react-image-annotator`
+`npm install @dansreis/react-image-annotator`
 
 ```javascript
 import React from "react";

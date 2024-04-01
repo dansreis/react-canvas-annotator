@@ -1,6 +1,0 @@
-- Full polygons support
-- More complex "hover" on annotations ( should be able to categorize with colors)
-- Complete README file
-- Support tooltips
-- Support more icons
-- Fix bug of moving annotation box after zoom

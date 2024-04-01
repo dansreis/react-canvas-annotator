@@ -6,7 +6,7 @@ import MenuItem from "../MenuItem";
 describe("MenuItem component", () => {
   it("MenuItem should render correctly", () => {
     render(<MenuItem iconName={"circle"} />);
-    const Item = screen.getByRole("MenuItem");
-    expect(Item).toBeInTheDocument();
+    const item = screen.getByRole("menu-item");
+    expect(item).toBeInTheDocument();
   });
 });

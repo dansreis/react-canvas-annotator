@@ -32,6 +32,7 @@ const Board: React.FC<BoardProps> = ({
 
   return (
     <button
+      role="board"
       type="button"
       onClick={onClick}
       disabled={disabled}

@@ -16,7 +16,7 @@ const Annotator: React.FC<AnnotatorProps> = ({ id, primary, ...props }) => {
   const stackMenuClasses = "bg-gray-400 w-1/6 p-4";
 
   return (
-    <div id={id} className={`w-full ${baseClasses}`} {...props}>
+    <div id={id} role={"annotator"} className={`w-full ${baseClasses}`} {...props}>
       <div className={headerClasses}>Header</div>
       <div className={containerClasses}>
         <div className={toolbarClasses}>Toolbar</div>
