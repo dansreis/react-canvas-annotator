@@ -2,7 +2,15 @@
 <img src="./logo.svg" alt="react-image-annotator" />
 </div>
 
+# react-image-annotator
+
+> Image Annotator Component for React Applications
+
+[![NPM](https://img.shields.io/npm/v/@dansreis/react-image-annotator)](https://www.npmjs.com/package/@dansreis/react-image-annotator)
+[![npm](https://img.shields.io/npm/dm/@dansreis/react-image-annotator)](https://www.npmjs.com/package/@dansreis/react-image-annotator)
 [![Build Status](https://github.com/dansreis/react-image-annotator/actions/workflows/main.yml/badge.svg)](https://github.com/dansreis/react-image-annotator/actions)
+![Github All Contributors](https://img.shields.io/github/all-contributors/dansreis/react-image-annotator)
+
 
 ## Features
 

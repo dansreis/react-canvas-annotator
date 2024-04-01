@@ -1,6 +1,7 @@
 {
   "name": "@dansreis/react-image-annotator",
-  "version": "0.0.1",
+  "homepage": "http://dansreis.github.io/react-image-annotator",
+  "version": "0.0.3",
   "description": "",
   "type": "module",
   "main": "dist/index.cjs.js",
@@ -19,7 +20,8 @@
     "test:ui": "vitest --ui",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "deploy-storybook": "gh-pages -d storybook-static"
   },
   "author": "Daniel Reis",
   "license": "MIT",
@@ -50,6 +52,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
     "eslint-plugin-storybook": "^0.8.0",
+    "gh-pages": "^6.1.1",
     "husky": "^9.0.11",
     "jsdom": "^24.0.0",
     "lint-staged": "^15.2.2",
