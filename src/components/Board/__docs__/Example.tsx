@@ -4,6 +4,7 @@ import useBoardActions from "../hooks";
 
 const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
   const { actions, onLoaded } = useBoardActions();
+
   return (
     <>
       <div
@@ -23,6 +24,7 @@ const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
         />
       </div>
       <button onClick={() => actions.alert()}>LOG</button>
+      <button onClick={() => actions.setDragging()}>Dragging</button>
     </>
   );
 };

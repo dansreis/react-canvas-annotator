@@ -14,6 +14,7 @@ export type BoardProps = {
 
 export type BoardActions = {
   alert: () => void;
+  setDragging: () => void;
 };
 
 type CanvasAnnotationState = {
@@ -54,6 +55,11 @@ const Board: React.FC<BoardProps> = ({
 
   const boardActions = React.useRef<BoardActions>({
     alert: () => console.log("HERE! - ALERT!"),
+    setDragging: () => {
+      const vv = !draggingEnabled;
+      console.log(`New value: ${vv}`);
+      setDraggingEnabled(vv);
+    },
   });
 
   // Set available actions for parent
