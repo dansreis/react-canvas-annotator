@@ -50,7 +50,7 @@ const InnerContent = styled.div`
 
 const Annotator: React.FC<AnnotatorProps> = ({ id, primary }) => {
   return (
-    <Container id={id}>
+    <Container id={id} role={"annotator"}>
       <TopBar>
         <Header
           primary={primary}
