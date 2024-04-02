@@ -8,8 +8,8 @@ const Example: FC<AnnotatorProps> = ({ id, primary = true }) => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        height: "100%",
-        width: "100%",
+        width: "900px",
+        height: "500px",
       }}
     >
       <Annotator id={id} primary={primary} />

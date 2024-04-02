@@ -22,6 +22,7 @@ const MenuContainer = styled.div<Omit<MenuProps, "items">>`
   font-family: "Roboto";
   font-style: normal;
   visibility: ${(props) => (props.visible ? "visible" : "hidden")};
+  font-size: 14px;
   background-color: ${(props) =>
     props.primary
       ? tokens.primary.backgroundColor

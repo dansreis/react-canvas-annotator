@@ -73,7 +73,7 @@ const ImageInfo = styled.span<HeaderProps>`
 `;
 
 const Header: React.FC<HeaderProps> = ({
-  primary,
+  primary = true,
   size = "medium",
   imageInfo,
   zoom,
