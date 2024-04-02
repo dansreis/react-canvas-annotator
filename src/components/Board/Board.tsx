@@ -2,12 +2,18 @@ import React, { useEffect, useState } from "react";
 import { fabric } from "fabric";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 import tokens from "../../tokens";
-
-const WIDTH = 800;
-const HEIGHT = 500;
+import { CanvasObject } from "./types";
+import styled from "styled-components";
 
 export type BoardProps = {
   primary?: boolean;
+  items: CanvasObject[];
+  imageSrc: string;
+  onLoaded: (actions: BoardActions) => void;
+};
+
+export type BoardActions = {
+  alert: () => void;
 };
 
 type CanvasAnnotationState = {
@@ -17,8 +23,26 @@ type CanvasAnnotationState = {
   isDragging?: boolean;
 };
 
-const Board: React.FC<BoardProps> = ({ primary = true }) => {
+const StyledCanvas = styled.div`
+  width: 100%;
+  height: 100%;
+`;
+
+// const Board = React.forwardRef<BoardActions, BoardProps>(
+//   ({ primary = true, imageSrc }, ref) => {
+//     // Set board actions
+//     useImperativeHandle(ref, () => ({
+//       alert() {
+//         console.log("getAlert from Child");
+//       },
+//     }));
+const Board: React.FC<BoardProps> = ({
+  primary = true,
+  imageSrc,
+  onLoaded,
+}) => {
   const { editor, onReady } = useFabricJSEditor();
+
   const [currentZoom, setCurrentZoom] = useState<number>(100);
   const [scaleRatio, setScaleRation] = useState<number>(100);
   const [imageSize, setImageSize] = useState({
@@ -28,8 +52,20 @@ const Board: React.FC<BoardProps> = ({ primary = true }) => {
 
   const [draggingEnabled, setDraggingEnabled] = useState(false);
 
+  const boardActions = React.useRef<BoardActions>({
+    alert: () => console.log("HERE! - ALERT!"),
+  });
+
+  // Set available actions for parent
   useEffect(() => {
-    if (!editor || !fabric) {
+    onLoaded(boardActions.current);
+  }, [onLoaded]);
+
+  useEffect(() => {
+    const parentCanvasElement = document.getElementById(
+      "react-annotator-canvas",
+    );
+    if (!editor || !fabric || !parentCanvasElement) {
       return;
     }
 
@@ -38,14 +74,15 @@ const Board: React.FC<BoardProps> = ({ primary = true }) => {
       ? tokens.primary.backgroundColor
       : tokens.secondary.backgroundColor;
 
-    editor.canvas.setWidth(WIDTH);
-    editor.canvas.setHeight(HEIGHT);
+    // Set FabricJS canvas width and height
+    editor.canvas.setWidth(parentCanvasElement.clientWidth);
+    editor.canvas.setHeight(parentCanvasElement.clientHeight);
 
     // Change the cursor
     editor.canvas.defaultCursor = draggingEnabled ? "pointer" : "default";
 
     fabric.Image.fromURL(
-      "holder-min.jpg",
+      imageSrc,
       (img) => {
         const { canvas } = editor;
         const scaleRatio = Math.min(
@@ -119,120 +156,153 @@ const Board: React.FC<BoardProps> = ({ primary = true }) => {
       opt.e.stopPropagation();
     });
 
+    // Selected Objects
+    editor.canvas.on(
+      "selection:created",
+      function (this: CanvasAnnotationState, opt) {
+        console.log("SELECTED! ", opt.selected?.[0]);
+
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+      },
+    );
+
+    // editor.canvas.on("mouse:over", function (this: CanvasAnnotationState, opt) {
+    //   opt.target?.set("fill", "green");
+    //   editor.canvas.renderAll();
+
+    //   opt.e.preventDefault();
+    //   opt.e.stopPropagation();
+    // });
+
+    // editor.canvas.on("mouse:out", function (this: CanvasAnnotationState, opt) {
+    //   opt.target?.set("fill", "rgba(255,127,39,1)");
+    //   editor.canvas.renderAll();
+
+    //   opt.e.preventDefault();
+    //   opt.e.stopPropagation();
+    // });
+
     editor.canvas.renderAll();
-  }, [primary, draggingEnabled, editor]);
+  }, [primary, draggingEnabled, editor, imageSrc]);
 
   // TODO: Make sure this makes sense..
-  const resetZoom = () => {
-    editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-  };
+  // const resetZoom = () => {
+  //   editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+  // };
 
-  const getActiveObjects = () => {
-    console.log(editor?.canvas.getActiveObjects());
-  };
+  // const getActiveObjects = () => {
+  //   console.log(editor?.canvas.getActiveObjects());
+  // };
 
-  const addRandom = () => {
-    // Calculate the coordinates relative to the image
-    // (x1, y1) = (133, 460)
-    const rect = new fabric.Rect({
-      scaleX: scaleRatio,
-      scaleY: scaleRatio,
-      left: WIDTH / 2 - (imageSize.width * scaleRatio) / 2 + 133 * scaleRatio, // Specify the left coordinate relative to image
-      top: HEIGHT / 2 - (imageSize.height * scaleRatio) / 2 + 460 * scaleRatio,
-      width: 73,
-      height: 33,
-      fill: undefined,
-      stroke: "red",
-      strokeWidth: 1,
-      selectable: true,
-    });
-    editor?.canvas.add(rect);
-  };
+  // const addRandom = () => {
+  //   // Calculate the coordinates relative to the image
+  //   // (x1, y1) = (133, 460)
+  //   const rect = new fabric.Rect({
+  //     scaleX: scaleRatio,
+  //     scaleY: scaleRatio,
+  //     left: WIDTH / 2 - (imageSize.width * scaleRatio) / 2 + 133 * scaleRatio, // Specify the left coordinate relative to image
+  //     top: HEIGHT / 2 - (imageSize.height * scaleRatio) / 2 + 460 * scaleRatio,
+  //     width: 73,
+  //     height: 33,
+  //     fill: undefined,
+  //     stroke: "red",
+  //     strokeWidth: 1,
+  //     selectable: true,
+  //   });
+  //   editor?.canvas.add(rect);
+  // };
 
-  const onAddRectangle = () => {
-    // editor?.addRectangle();
-    const rect = new fabric.Rect({
-      left: 0,
-      top: 0,
-      originX: "left",
-      originY: "top",
-      width: 100,
-      height: 100,
-      fill: "rgba(255,127,39,1)",
-      selectable: true,
-      visible: true,
-    });
+  // const onAddRectangle = () => {
+  //   // editor?.addRectangle();
+  //   const rect = new fabric.Rect({
+  //     name: "MERDAS",
+  //     left: 0,
+  //     top: 0,
+  //     originX: "left",
+  //     originY: "top",
+  //     width: 100,
+  //     height: 100,
+  //     fill: "rgba(255,127,39,1)",
+  //     selectable: true,
+  //     visible: true,
+  //   });
 
-    const renderIcon = (
-      ctx: CanvasRenderingContext2D,
-      left: number,
-      top: number,
-      styleOverride: unknown,
-      fabricObject: fabric.Object,
-    ) => {
-      const deleteIcon =
-        "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
+  //   const renderIcon = (
+  //     ctx: CanvasRenderingContext2D,
+  //     left: number,
+  //     top: number,
+  //     styleOverride: unknown,
+  //     fabricObject: fabric.Object,
+  //   ) => {
+  //     const deleteIcon =
+  //       "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
 
-      const img = document.createElement("img");
-      img.src = deleteIcon;
-      const size = 24;
-      ctx.save();
-      ctx.translate(left, top);
-      if (fabricObject.angle)
-        ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
-      ctx.drawImage(img, -size / 2, -size / 2, size, size);
-      ctx.restore();
-    };
+  //     const img = document.createElement("img");
+  //     img.src = deleteIcon;
+  //     const size = 24;
+  //     ctx.save();
+  //     ctx.translate(left, top);
+  //     if (fabricObject.angle)
+  //       ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+  //     ctx.drawImage(img, -size / 2, -size / 2, size, size);
+  //     ctx.restore();
+  //   };
 
-    const onDelete = () => {
-      editor?.deleteSelected();
-      return true;
-    };
+  //   const onDelete = () => {
+  //     editor?.deleteSelected();
+  //     return true;
+  //   };
 
-    rect.controls = {
-      onDelete: new fabric.Control({
-        x: 0.5,
-        y: -0.5,
-        offsetY: 16,
-        cursorStyle: "pointer",
-        mouseUpHandler: () => onDelete(),
-        render: renderIcon,
-      }),
-    };
+  //   rect.controls = {
+  //     onDelete: new fabric.Control({
+  //       x: 0.5,
+  //       y: -0.5,
+  //       offsetY: 16,
+  //       cursorStyle: "pointer",
+  //       mouseUpHandler: () => onDelete(),
+  //       render: renderIcon,
+  //     }),
+  //   };
 
-    editor?.canvas.add(rect);
-    // setAction({ primitive: "rectangle", operation: "add" });
-  };
+  //   editor?.canvas.add(rect);
+  //   // setAction({ primitive: "rectangle", operation: "add" });
+  // };
 
-  const draggingState = () => {
-    setDraggingEnabled(!draggingEnabled);
-  };
+  // const draggingState = () => {
+  //   setDraggingEnabled(!draggingEnabled);
+  // };
 
-  const getVisible = () => {
-    console.log(editor?.canvas.getObjects()?.[0].visible);
-  };
+  // const getVisible = () => {
+  //   console.log(editor?.canvas.getObjects()?.[0].visible);
+  // };
 
   return (
-    <div className="App">
-      <button onClick={onAddRectangle}>Add Rectangle</button>
-      <button onClick={resetZoom}>Reset Zoom</button>
-      <button onClick={addRandom}>Add Random</button>
-      <button onClick={draggingState}>
-        DraggingState {draggingEnabled ? "ON" : "OFF"}
-      </button>
-      <button onClick={getActiveObjects}>Active Objects</button>
-      <button onClick={getVisible}>Get Visible</button>
-      <div
-        style={{
-          border: `3px solid Green`,
-          width: `${WIDTH}px`,
-          height: `${HEIGHT}px`,
-        }}
-      >
-        <FabricJSCanvas className="react-annotator-canvas" onReady={onReady} />
-        <div>Zoom: {Math.round(currentZoom)}%</div>
-      </div>
-    </div>
+    <>
+      <StyledCanvas id="react-annotator-canvas">
+        <FabricJSCanvas className="fabricjs-canvas" onReady={onReady} />
+      </StyledCanvas>
+    </>
+    // <div className="App">
+    //   <button onClick={onAddRectangle}>Add Rectangle</button>
+    //   <button onClick={resetZoom}>Reset Zoom</button>
+    //   <button onClick={addRandom}>Add Random</button>
+    //   <button onClick={draggingState}>
+    //     DraggingState {draggingEnabled ? "ON" : "OFF"}
+    //   </button>
+    //   <button onClick={getActiveObjects}>Active Objects</button>
+    //   <button onClick={getVisible}>Get Visible</button>
+    //   <div
+    //     style={{
+    //       border: `3px solid Green`,
+    //       width: `${WIDTH}px`,
+    //       height: `${HEIGHT}px`,
+    //     }}
+    //   >
+    //     <FabricJSCanvas className="react-annotator-canvas" onReady={onReady} />
+    //     <div>Zoom: {Math.round(currentZoom)}%</div>
+    //   </div>
+    // </div>
   );
 };
 
