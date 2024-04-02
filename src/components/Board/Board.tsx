@@ -160,7 +160,7 @@ const Board: React.FC<BoardProps> = ({ primary = true }) => {
       height: 100,
       fill: "rgba(255,127,39,1)",
       selectable: true,
-      visible: false,
+      visible: true,
     });
 
     const renderIcon = (
