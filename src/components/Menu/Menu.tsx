@@ -19,14 +19,15 @@ export type MenuProps = {
 // Styled components
 const MenuContainer = styled.div<Omit<MenuProps, "items">>`
   width: 100%;
-  font-family: "Roboto";
+  height: 100%;
+  font-family: Roboto;
   font-style: normal;
   visibility: ${(props) => (props.visible ? "visible" : "hidden")};
   font-size: 14px;
   background-color: ${(props) =>
     props.primary
       ? tokens.primary.backgroundColor
-      : tokens.secondary.semiBackgroundColor};
+      : tokens.secondary.backgroundColor};
   color: ${(props) =>
     props.primary ? tokens.primary.color : tokens.secondary.color};
 `;
@@ -36,7 +37,7 @@ const MenuItem = styled.div<Omit<MenuProps, "items">>`
     ${(props) =>
       props.primary ? tokens.primary.lightColor : tokens.secondary.lightColor};
   border-radius: 5px;
-  margin: 5px;
+  margin: 0 5px 5px 5px;
   background-color: ${(props) =>
     props.primary ? undefined : tokens.secondary.activeColor};
 `;

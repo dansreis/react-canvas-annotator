@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Header } from "../Header";
 import { Toolbar } from "../Toolbar";
 import { Menu } from "../Menu";
+import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 
 export type AnnotatorProps = {
   id?: string;
@@ -16,6 +17,7 @@ const Container = styled.div`
   width: 100%;
   border: 2px solid black;
   border-radius: 2px;
+  padding: 5px;
 `;
 
 const TopBar = styled.div`
@@ -35,6 +37,7 @@ const InnerWrapper = styled.div`
 const LeftBar = styled.div`
   background-color: #444;
   width: auto;
+  overflow: hidden;
 `;
 
 const RightBar = styled.div`
@@ -44,11 +47,25 @@ const RightBar = styled.div`
 
 const InnerContent = styled.div`
   flex: 1;
-  background-color: #eee;
-  padding: 20px;
+  border: 1px solid #cbcbcb;
+  margin: 15px;
 `;
 
 const Annotator: React.FC<AnnotatorProps> = ({ id, primary }) => {
+  const ref = useRef(null);
+  const { editor, onReady } = useFabricJSEditor();
+
+  useEffect(() => {
+    if (!editor || !ref.current) {
+      return;
+    }
+    console.log("width", ref.current ? ref.current.offsetWidth : 0);
+    console.log("height", ref.current ? ref.current.offsetHeight : 0);
+
+    editor.canvas.setWidth(ref.current.offsetWidth);
+    editor.canvas.setHeight(ref.current.offsetHeight);
+  }, [ref, editor]);
+
   return (
     <Container id={id} role={"annotator"}>
       <TopBar>
@@ -84,7 +101,9 @@ const Annotator: React.FC<AnnotatorProps> = ({ id, primary }) => {
             ]}
           />
         </LeftBar>
-        <InnerContent>Inner Content</InnerContent>
+        <InnerContent ref={ref}>
+          <FabricJSCanvas className="sample-canvas" onReady={onReady} />
+        </InnerContent>
         <RightBar>
           <Menu
             visible

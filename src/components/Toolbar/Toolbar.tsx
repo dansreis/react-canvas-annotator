@@ -21,12 +21,11 @@ const StyledDiv = styled.div<Omit<ToolbarProps, "items">>`
     props.primary
       ? tokens.primary.backgroundColor
       : tokens.secondary.backgroundColor};
-  gap: 10px;
   height: 100%;
 `;
 
 const ItemDiv = styled.div`
-  padding: 5px;
+  margin: 5px;
 `;
 
 const Toolbar: React.FC<ToolbarProps> = ({
