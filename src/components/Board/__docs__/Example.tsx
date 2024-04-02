@@ -1,13 +1,7 @@
 import React, { FC } from "react";
 import Board, { BoardProps } from "../Board";
 
-const Example: FC<BoardProps> = ({
-  disabled = false,
-  onClick = () => {},
-  primary = true,
-  size = "small",
-  text = "Button",
-}) => {
+const Example: FC<BoardProps> = ({ primary = true }) => {
   return (
     <div
       style={{
@@ -17,13 +11,7 @@ const Example: FC<BoardProps> = ({
         height: "100%",
       }}
     >
-      <Board
-        size={size}
-        text={text}
-        disabled={disabled}
-        onClick={onClick}
-        primary={primary}
-      />
+      <Board primary={primary} />
     </div>
   );
 };

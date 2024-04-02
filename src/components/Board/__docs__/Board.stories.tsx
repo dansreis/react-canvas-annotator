@@ -1,29 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import ExampleMain from "./ExampleMain";
+import Example from "./Example";
 
-const meta: Meta<typeof ExampleMain> = {
+const meta: Meta<typeof Example> = {
   title: "Board",
-  component: ExampleMain,
+  component: Example,
 };
 
 export default meta;
-type Story = StoryObj<typeof ExampleMain>;
+type Story = StoryObj<typeof Example>;
 
 export const Primary: Story = {
   args: {
-    text: "Board",
     primary: true,
-    disabled: false,
-    size: "small",
-    onClick: () => console.log("Board"),
-  },
-};
-export const Secondary: Story = {
-  args: {
-    text: "Board",
-    primary: false,
-    disabled: false,
-    size: "small",
-    onClick: () => console.log("Board"),
   },
 };
