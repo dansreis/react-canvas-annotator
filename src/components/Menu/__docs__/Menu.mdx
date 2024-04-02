@@ -20,10 +20,8 @@ import {Menu} from "react-image-annotator";
 const Example = () => {
   return (
       <Menu
-        size={"small"}
-        text={"Menu"}
-        onClick={()=> console.log("Clicked")}
         primary
+        items={[{ icon: "tags", title: "Tag", content: <>Hello World</> }]}
       />
   );
 };

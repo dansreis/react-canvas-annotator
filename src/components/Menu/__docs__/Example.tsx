@@ -2,28 +2,23 @@ import React, { FC } from "react";
 import Menu, { MenuProps } from "../Menu";
 
 const Example: FC<MenuProps> = ({
-  disabled = false,
-  onClick = () => {},
   primary = true,
-  size = "small",
-  text = "Menu",
+  visible = true,
+  items = [
+    { icon: "tags", title: "Tag", content: <>Hello World</> },
+    { icon: "zoomReset", title: "Zooming", content: <>Hello World</> },
+  ],
 }) => {
   return (
     <div
       style={{
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100%",
+        width: "500px",
+        height: "500px",
+        overflow: "auto",
       }}
     >
-      <Menu
-        size={size}
-        text={text}
-        disabled={disabled}
-        onClick={onClick}
-        primary={primary}
-      />
+      <Menu primary={primary} visible={visible} items={items} />
     </div>
   );
 };

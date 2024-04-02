@@ -1,46 +1,128 @@
-import React, { MouseEventHandler } from "react";
+import React, { useState } from "react";
+import styled from "styled-components";
+import { FiChevronDown, FiChevronUp } from "react-icons/fi"; // Assuming you have react-icons installed
+import { AvailableIcons } from "../../utils";
+import tokens from "../../tokens";
+import { CgUnavailable } from "react-icons/cg";
 
 export type MenuProps = {
-  text?: string;
   primary?: boolean;
-  disabled?: boolean;
-  size?: "small" | "medium" | "large";
-  onClick?: MouseEventHandler<HTMLButtonElement>;
+  visible?: boolean;
+  items: {
+    icon?: keyof typeof AvailableIcons;
+    title: string;
+    content: React.ReactNode;
+    disabled?: boolean;
+  }[];
 };
 
-const Menu: React.FC<MenuProps> = ({
-  size,
-  primary,
-  disabled,
-  text,
-  onClick,
-  ...props
-}) => {
-  // Determine button color and background color based on primary prop
-  const buttonColor = primary ? "text-white" : "text-black";
-  const bgColor = primary ? "bg-red-600" : "bg-gray-300";
+// Styled components
+const MenuContainer = styled.div<Omit<MenuProps, "items">>`
+  width: 100%;
+  font-family: "Roboto";
+  font-style: normal;
+  visibility: ${(props) => (props.visible ? "visible" : "hidden")};
+  background-color: ${(props) =>
+    props.primary
+      ? tokens.primary.backgroundColor
+      : tokens.secondary.semiBackgroundColor};
+  color: ${(props) =>
+    props.primary ? tokens.primary.color : tokens.secondary.color};
+`;
 
-  // Determine padding based on size prop
-  let paddingClass = "";
-  if (size === "small") {
-    paddingClass = "py-1 px-6";
-  } else if (size === "medium") {
-    paddingClass = "py-2 px-8";
-  } else {
-    paddingClass = "py-3 px-8";
-  }
+const MenuItem = styled.div<Omit<MenuProps, "items">>`
+  border: 1px solid
+    ${(props) =>
+      props.primary ? tokens.primary.lightColor : tokens.secondary.lightColor};
+  border-radius: 5px;
+  margin: 5px;
+  background-color: ${(props) =>
+    props.primary ? undefined : tokens.secondary.activeColor};
+`;
+
+const MenuHeader = styled.div<
+  Omit<MenuProps, "items"> & { disabled?: boolean }
+>`
+  background-color: ${(props) =>
+    props.primary
+      ? tokens.primary.semiBackgroundColor
+      : tokens.secondary.backgroundColor};
+
+  padding: 10px;
+  border-radius: 5px;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const MenuTitle = styled.span<Omit<MenuProps, "items">>`
+  display: flex;
+  gap: 10px;
+  font-weight: 600;
+`;
+
+const MenuIcon = styled.div`
+  display: "flex";
+  align-items: "center";
+  justify-content: "center";
+`;
+
+const MenuContent = styled.div<Omit<MenuProps, "items"> & { isOpen: boolean }>`
+  padding: 10px;
+  display: ${({ isOpen }) => (isOpen ? "block" : "none")};
+  color: ${(props) =>
+    props.primary ? tokens.primary.color : tokens.secondary.color};
+`;
+
+const Menu: React.FC<MenuProps> = ({ primary, visible = true, items }) => {
+  const [openIndexes, setOpenIndexes] = useState<number[]>([]);
+
+  const toggleMenu = (index: number) => {
+    const currentIndex = openIndexes.indexOf(index);
+    const newOpenIndexes = [...openIndexes];
+    if (currentIndex === -1) {
+      newOpenIndexes.push(index);
+    } else {
+      newOpenIndexes.splice(currentIndex, 1);
+    }
+    setOpenIndexes(newOpenIndexes);
+  };
 
   return (
-    <button
-      role="menu"
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`border-0 font-semibold rounded-lg inline-block cursor-pointer ${buttonColor} ${bgColor} ${paddingClass}`}
-      {...props}
-    >
-      {text}
-    </button>
+    <MenuContainer primary={primary} visible={visible} role="menu">
+      {items.map(({ icon, title, content, disabled }, index) => {
+        const DynamicIcon = AvailableIcons[icon ?? "rectangle"];
+        return (
+          <MenuItem primary={primary} key={index}>
+            <MenuHeader
+              primary={primary}
+              disabled={!!disabled}
+              onClick={() => !disabled && toggleMenu(index)}
+            >
+              <MenuTitle primary={primary}>
+                {icon ? (
+                  <MenuIcon>
+                    <DynamicIcon size={tokens.icon.medium} />
+                  </MenuIcon>
+                ) : undefined}
+                {title}
+              </MenuTitle>
+              {openIndexes.includes(index) ? (
+                <FiChevronUp />
+              ) : disabled ? (
+                <CgUnavailable />
+              ) : (
+                <FiChevronDown />
+              )}
+            </MenuHeader>
+            <MenuContent primary={primary} isOpen={openIndexes.includes(index)}>
+              {content}
+            </MenuContent>
+          </MenuItem>
+        );
+      })}
+    </MenuContainer>
   );
 };
 

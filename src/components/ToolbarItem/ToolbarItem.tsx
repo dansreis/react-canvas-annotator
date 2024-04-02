@@ -24,10 +24,10 @@ const StyledDiv = styled.div<Omit<ToolbarItemProps, "iconName">>`
   font-style: normal;
   font-size: ${(props) =>
     props.size === "small"
-      ? "9px 30px 9px"
+      ? `${tokens.font.small}px`
       : props.size === "medium"
-        ? "9px 30px 9px"
-        : "9px 30px 9px"};
+        ? `${tokens.font.medium}px`
+        : `${tokens.font.large}px`};
   cursor: pointer;
   font-weight: 400;
   border-radius: 5px;
