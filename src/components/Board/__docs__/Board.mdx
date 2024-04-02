@@ -15,15 +15,15 @@ Button component with different props.
 ## Usage
 
 ```ts
-import {Board} from "react-image-annotator";
+import Board {BoardActions} from "react-image-annotator";
 
 const Example = () => {
-  const { onLoaded } = useBoardActions();
+  const ref = React.createRef<BoardActions>();
   return (
       <Board
         primary
+        ref={ref}
         imageSrc={"holder-min.jpg"}
-        onLoaded={onLoaded}
         items={[]}
       />
   );

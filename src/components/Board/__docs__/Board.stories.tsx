@@ -21,7 +21,7 @@ const ITEMS: CanvasObject[] = [
     ],
   },
 ];
-console.log(ITEMS);
+
 export default meta;
 type Story = StoryObj<typeof Example>;
 

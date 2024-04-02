@@ -1,9 +1,8 @@
 import React, { FC } from "react";
-import Board, { BoardProps } from "../Board";
-import useBoardActions from "../hooks";
+import Board, { BoardActions, BoardProps } from "../Board";
 
 const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
-  const { actions, onLoaded } = useBoardActions();
+  const ref = React.createRef<BoardActions>();
 
   return (
     <>
@@ -16,15 +15,9 @@ const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
           height: "500px",
         }}
       >
-        <Board
-          primary={primary}
-          imageSrc={imageSrc}
-          items={items}
-          onLoaded={onLoaded}
-        />
+        <Board ref={ref} primary={primary} imageSrc={imageSrc} items={items} />
       </div>
-      <button onClick={() => actions.alert()}>LOG</button>
-      <button onClick={() => actions.setDragging()}>Dragging</button>
+      <button onClick={() => ref.current?.toggleDragging()}>Dragging</button>
     </>
   );
 };
