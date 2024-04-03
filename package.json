@@ -1,6 +1,6 @@
 {
-  "name": "@dansreis/react-image-annotator",
-  "homepage": "http://dansreis.github.io/react-image-annotator",
+  "name": "@dansreis/react-canvas-annotator",
+  "homepage": "http://dansreis.github.io/react-canvas-annotator",
   "version": "0.0.3",
   "description": "",
   "type": "module",
@@ -80,7 +80,7 @@
   },
   "keywords": [
     "react-component",
-    "react-image-annotator"
+    "react-canvas-annotator"
   ],
   "dependencies": {
     "fabric": "^5.3.0",
