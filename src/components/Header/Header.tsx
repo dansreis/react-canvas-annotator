@@ -46,7 +46,7 @@ const ZoomValue = styled.span<HeaderProps>`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "Roboto";
+  font-family: Roboto;
   font-style: normal;
   font-weight: 500;
   min-width: 50px;
@@ -65,7 +65,7 @@ const ImageInfo = styled.span<HeaderProps>`
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: "Roboto";
+  font-family: Roboto;
   font-style: normal;
   font-weight: 500;
   color: ${(props) =>
@@ -73,7 +73,7 @@ const ImageInfo = styled.span<HeaderProps>`
 `;
 
 const Header: React.FC<HeaderProps> = ({
-  primary,
+  primary = true,
   size = "medium",
   imageInfo,
   zoom,

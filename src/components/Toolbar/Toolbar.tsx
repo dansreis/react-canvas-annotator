@@ -21,9 +21,11 @@ const StyledDiv = styled.div<Omit<ToolbarProps, "items">>`
     props.primary
       ? tokens.primary.backgroundColor
       : tokens.secondary.backgroundColor};
-  padding: 5px;
-  height: max-content;
-  gap: 10px;
+  height: 100%;
+`;
+
+const ItemDiv = styled.div`
+  margin: 5px;
 `;
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -39,18 +41,19 @@ const Toolbar: React.FC<ToolbarProps> = ({
   return (
     <StyledDiv role={"toolbar"} primary={primary} {...props}>
       {items.map(({ icon, text, onClick }, index) => (
-        <ToolbarItem
-          key={index}
-          iconName={icon}
-          text={text}
-          primary={primary}
-          size={size}
-          active={selectedItem === index}
-          onClick={(event) => {
-            setSelectedItem(index);
-            onClick?.(event);
-          }}
-        />
+        <ItemDiv key={index}>
+          <ToolbarItem
+            iconName={icon}
+            text={text}
+            primary={primary}
+            size={size}
+            active={selectedItem === index}
+            onClick={(event) => {
+              setSelectedItem(index);
+              onClick?.(event);
+            }}
+          />
+        </ItemDiv>
       ))}
     </StyledDiv>
   );

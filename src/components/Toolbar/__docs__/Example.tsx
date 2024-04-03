@@ -14,7 +14,7 @@ const Example: FC<ToolbarProps> = ({
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        height: "100%",
+        height: "500px",
       }}
     >
       <Toolbar primary={primary} items={items} size={size} />
