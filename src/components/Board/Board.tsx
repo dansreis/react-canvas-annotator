@@ -49,6 +49,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       primary = true,
       imageSrc,
       initialStatus,
+      items,
       onToggleDragging,
       onResetZoom,
       onZoomChange,
@@ -65,6 +66,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       },
       resetZoom() {
         editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        addItems();
         onResetZoom?.();
       },
     }));
@@ -74,7 +76,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       initialStatus?.currentZoom || 100,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [scaleRatio, setScaleRation] = useState(
       initialStatus?.scaleRatio || 100,
     );
@@ -197,7 +198,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "selection:created",
         function (this: CanvasAnnotationState, opt) {
-          console.log("SELECTED! ", opt.selected?.[0]);
+          // console.log("SELECTED! ", opt.selected?.[0]);
 
           opt.e.preventDefault();
           opt.e.stopPropagation();
@@ -235,27 +236,30 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       onZoomChange?.(Math.round(currentZoom));
     }, [currentZoom, onZoomChange]);
 
-    // const getActiveObjects = () => {
-    //   console.log(editor?.canvas.getActiveObjects());
-    // };
+    // Load Initial items
+    useEffect(() => {
+      const toScaledCoord = (coord: { x: number; y: number }) => {
+        const height = editor?.canvas.getHeight() ?? 1;
+        const width = editor?.canvas.getWidth() ?? 1;
+        const x =
+          width / 2 - (imageSize.width * scaleRatio) / 2 + coord.x * scaleRatio;
+        const y =
+          height / 2 -
+          (imageSize.height * scaleRatio) / 2 +
+          coord.y * scaleRatio;
 
-    // const addRandom = () => {
-    //   // Calculate the coordinates relative to the image
-    //   // (x1, y1) = (133, 460)
-    //   const rect = new fabric.Rect({
-    //     scaleX: scaleRatio,
-    //     scaleY: scaleRatio,
-    //     left: WIDTH / 2 - (imageSize.width * scaleRatio) / 2 + 133 * scaleRatio, // Specify the left coordinate relative to image
-    //     top: HEIGHT / 2 - (imageSize.height * scaleRatio) / 2 + 460 * scaleRatio,
-    //     width: 73,
-    //     height: 33,
-    //     fill: undefined,
-    //     stroke: "red",
-    //     strokeWidth: 1,
-    //     selectable: true,
-    //   });
-    //   editor?.canvas.add(rect);
-    // };
+        return { x, y };
+      };
+
+      for (const item of items) {
+        const polygon = new fabric.Polygon(item.coords.map(toScaledCoord), {
+          fill: undefined,
+          stroke: "red",
+          strokeWidth: 0.3,
+        });
+        editor?.canvas.add(polygon);
+      }
+    }, [editor?.canvas, imageSize.height, imageSize.width, items, scaleRatio]);
 
     // const onAddRectangle = () => {
     //   // editor?.addRectangle();

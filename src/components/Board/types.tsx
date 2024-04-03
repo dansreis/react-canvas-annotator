@@ -3,5 +3,5 @@ export type CanvasObject = {
   category: string;
   color: string;
   value: string;
-  coords: number[][];
+  coords: { x: number; y: number }[];
 };
