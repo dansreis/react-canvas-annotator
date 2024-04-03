@@ -1,30 +1,26 @@
 import { Canvas, Meta } from "@storybook/blocks";
 import Example from "./Example.tsx";
-import * as Board from "./Board.stories.tsx";
+import * as Tooltip from "./Tooltip.stories.tsx";
 
-<Meta of={Board} title="Board" />
+<Meta of={Tooltip} title="Tooltip" />
 
-# Board
+# Tooltip
 
 Button component with different props.
 
 #### Example
 
-<Canvas of={Board.Main} />
+<Canvas of={Tooltip.Primary} />
 
 ## Usage
 
 ```ts
-import Board {BoardActions} from "react-image-annotator";
+import {Tooltip} from "react-image-annotator";
 
 const Example = () => {
-  const ref = React.createRef<BoardActions>();
   return (
-      <Board
+      <Tooltip
         primary
-        ref={ref}
-        imageSrc={"holder-min.jpg"}
-        items={[]}
       />
   );
 };
