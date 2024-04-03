@@ -31,6 +31,8 @@ export type BoardActions = {
   resetZoom: () => void;
   deleteSelectedObjects: () => void;
   drawPolygon: () => void;
+  randomAction1: () => void;
+  randomAction2: () => void;
 };
 
 type CanvasAnnotationState = {
@@ -85,7 +87,20 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         }
       },
       drawPolygon() {
-        console.log("drawing");
+        setDrawingPolygon(!drawingPolygon);
+      },
+      randomAction1() {
+        const line = new fabric.Line([0, 0, 40, 40], {
+          stroke: "reg",
+          strokeWidth: 2,
+          selectable: true,
+          hasBorders: true,
+        });
+
+        editor?.canvas.add(line);
+      },
+      randomAction2() {
+        console.log("randomAction2");
       },
     }));
     const { editor, onReady } = useFabricJSEditor();

@@ -29,6 +29,13 @@ const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
         <button onClick={() => ref.current?.deleteSelectedObjects()}>
           Delete Selected
         </button>
+        <button onClick={() => ref.current?.drawPolygon()}>Draw Polygon</button>
+        <button onClick={() => ref.current?.randomAction1()}>
+          RandomAction (1)
+        </button>
+        <button onClick={() => ref.current?.randomAction2()}>
+          RandomAction (2)
+        </button>
       </StyledDiv>
       <StyledDiv>
         <StyledP>Current zoom: {currentZoom}</StyledP>
