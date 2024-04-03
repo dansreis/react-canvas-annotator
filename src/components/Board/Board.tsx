@@ -30,6 +30,7 @@ export type BoardActions = {
   toggleDragging: (value?: boolean) => void;
   resetZoom: () => void;
   deleteSelectedObjects: () => void;
+  drawPolygon: () => void;
 };
 
 type CanvasAnnotationState = {
@@ -37,6 +38,9 @@ type CanvasAnnotationState = {
   lastPosX: number;
   lastPosY: number;
   isDragging?: boolean;
+  drawingPolygon?: boolean;
+  lastClickCoords?: { x: number; y: number };
+  polygonPoints?: { x: number; y: number }[];
 };
 
 const StyledCanvas = styled.div`
@@ -80,8 +84,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           editor?.canvas.discardActiveObject();
         }
       },
+      drawPolygon() {
+        console.log("drawing");
+      },
     }));
     const { editor, onReady } = useFabricJSEditor();
+
+    const [drawingPolygon, setDrawingPolygon] = useState(false);
 
     const [currentZoom, setCurrentZoom] = useState<number>(
       initialStatus?.currentZoom || 100,
@@ -90,12 +99,12 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     const [scaleRatio, setScaleRation] = useState(
       initialStatus?.scaleRatio || 100,
     );
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     const [imageSize, setImageSize] = useState({
       width: 0,
       height: 0,
     });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     const [draggingEnabled, setDraggingEnabled] = useState(
       initialStatus?.draggingEnabled || false,
     );
@@ -148,6 +157,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:wheel",
         function (this: CanvasAnnotationState, opt) {
+          if (this.drawingPolygon) return;
           const delta = opt.e.deltaY;
           let zoom = editor.canvas.getZoom();
           zoom *= 0.999 ** delta;
@@ -171,7 +181,38 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           this.selection = false;
           this.lastPosX = evt.clientX;
           this.lastPosY = evt.clientY;
+          this.drawingPolygon = drawingPolygon;
 
+          // Extract coords for polygon drawing
+          const pointer = editor?.canvas.getPointer(opt.e, true);
+          const lastClickCoords = { x: pointer.x, y: pointer.y };
+          this.lastClickCoords = lastClickCoords;
+
+          // Add all polygon points to be later drawn
+          if (drawingPolygon) {
+            if (this.polygonPoints) {
+              this.polygonPoints?.push(this.lastClickCoords);
+            } else {
+              this.polygonPoints = [this.lastClickCoords];
+            }
+
+            // Draw the polygon with the existing coords
+            // if (this.polygonPoints?.length ?? 0 >= 2) {
+            //   const polygonId = "polygonId";
+            //   const previousPolygon = editor.canvas
+            //     .getObjects()
+            //     .find((o) => o.name === polygonId);
+
+            //   if (previousPolygon) editor.canvas.remove(previousPolygon);
+            //   const newPolygon = new fabric.Polygon(this.polygonPoints ?? [], {
+            //     name: polygonId,
+            //     fill: undefined,
+            //     stroke: "red",
+            //     strokeWidth: 2,
+            //   });
+            //   editor.canvas.add(newPolygon);
+            // }
+          }
           opt.e.preventDefault();
           opt.e.stopPropagation();
         },
@@ -190,6 +231,33 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               this.lastPosX = e.clientX;
               this.lastPosY = e.clientY;
             }
+          } else if (this.drawingPolygon) {
+            const lineId = "lineId";
+            const pointer = editor?.canvas.getPointer(opt.e, true);
+
+            const { initialX, initialY } = {
+              initialX: this.lastClickCoords?.x ?? 0,
+              initialY: this.lastClickCoords?.y ?? 0,
+            };
+            const previousLine = editor.canvas
+              .getObjects()
+              .find((o) => o.name === lineId);
+
+            if (previousLine) editor.canvas.remove(previousLine);
+
+            const line = new fabric.Line(
+              [initialX, initialY, pointer.x, pointer.y],
+              {
+                name: lineId,
+                stroke: "red",
+                strokeWidth: 2,
+                cornerColor: "blue",
+                cornerStyle: "circle",
+                selectable: false,
+              },
+            );
+
+            editor.canvas.add(line);
           }
 
           opt.e.preventDefault();
@@ -240,6 +308,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       imageSrc,
       onLoadedImage,
       onZoomChange,
+      drawingPolygon,
     ]);
 
     // Update zoom parent value
@@ -264,6 +333,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
       for (const item of items) {
         const polygon = new fabric.Polygon(item.coords.map(toScaledCoord), {
+          name: `ID_${item.id}`,
           fill: undefined,
           stroke: "red",
           strokeWidth: 0.3,
@@ -271,21 +341,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         editor?.canvas.add(polygon);
       }
     }, [editor?.canvas, imageSize.height, imageSize.width, items, scaleRatio]);
-
-    // const onAddRectangle = () => {
-    //   // editor?.addRectangle();
-    //   const rect = new fabric.Rect({
-    //     name: "MERDAS",
-    //     left: 0,
-    //     top: 0,
-    //     originX: "left",
-    //     originY: "top",
-    //     width: 100,
-    //     height: 100,
-    //     fill: "rgba(255,127,39,1)",
-    //     selectable: true,
-    //     visible: true,
-    //   });
 
     //   const renderIcon = (
     //     ctx: CanvasRenderingContext2D,
@@ -306,11 +361,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     //       ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
     //     ctx.drawImage(img, -size / 2, -size / 2, size, size);
     //     ctx.restore();
-    //   };
-
-    //   const onDelete = () => {
-    //     editor?.deleteSelected();
-    //     return true;
     //   };
 
     //   rect.controls = {
@@ -336,27 +386,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       <StyledCanvas id="react-annotator-canvas" role="board">
         <FabricJSCanvas className="fabricjs-canvas" onReady={onReady} />
       </StyledCanvas>
-
-      // <div className="App">
-      //   <button onClick={onAddRectangle}>Add Rectangle</button>
-      //   <button onClick={resetZoom}>Reset Zoom</button>
-      //   <button onClick={addRandom}>Add Random</button>
-      //   <button onClick={draggingState}>
-      //     DraggingState {draggingEnabled ? "ON" : "OFF"}
-      //   </button>
-      //   <button onClick={getActiveObjects}>Active Objects</button>
-      //   <button onClick={getVisible}>Get Visible</button>
-      //   <div
-      //     style={{
-      //       border: `3px solid Green`,
-      //       width: `${WIDTH}px`,
-      //       height: `${HEIGHT}px`,
-      //     }}
-      //   >
-      //     <FabricJSCanvas className="react-annotator-canvas" onReady={onReady} />
-      //     <div>Zoom: {Math.round(currentZoom)}%</div>
-      //   </div>
-      // </div>
     );
   },
 );
