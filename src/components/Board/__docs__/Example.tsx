@@ -26,6 +26,9 @@ const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
           Toggle Dragging [{toggleStatus ? "ON" : "OFF"}]
         </button>
         <button onClick={() => ref.current?.resetZoom()}>Reset Zoom</button>
+        <button onClick={() => ref.current?.deleteSelectedObjects()}>
+          Delete Selected
+        </button>
       </StyledDiv>
       <StyledDiv>
         <StyledP>Current zoom: {currentZoom}</StyledP>

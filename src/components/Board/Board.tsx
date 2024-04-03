@@ -29,6 +29,7 @@ export type BoardProps = {
 export type BoardActions = {
   toggleDragging: (value?: boolean) => void;
   resetZoom: () => void;
+  deleteSelectedObjects: () => void;
 };
 
 type CanvasAnnotationState = {
@@ -68,6 +69,16 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         setCurrentZoom(100);
         onResetZoom?.();
+      },
+      deleteSelectedObjects() {
+        editor?.deleteSelected();
+        const activeObjects = editor?.canvas.getActiveObjects();
+        if (activeObjects) {
+          activeObjects.forEach((activeObject) => {
+            editor?.canvas.remove(activeObject);
+          });
+          editor?.canvas.discardActiveObject();
+        }
       },
     }));
     const { editor, onReady } = useFabricJSEditor();
