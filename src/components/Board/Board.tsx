@@ -66,6 +66,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       },
       resetZoom() {
         editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        setCurrentZoom(100);
         onResetZoom?.();
       },
     }));
