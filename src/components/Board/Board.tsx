@@ -322,11 +322,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     // };
 
     return (
-      <>
-        <StyledCanvas id="react-annotator-canvas">
-          <FabricJSCanvas className="fabricjs-canvas" onReady={onReady} />
-        </StyledCanvas>
-      </>
+      <StyledCanvas id="react-annotator-canvas" role="board">
+        <FabricJSCanvas className="fabricjs-canvas" onReady={onReady} />
+      </StyledCanvas>
+
       // <div className="App">
       //   <button onClick={onAddRectangle}>Add Rectangle</button>
       //   <button onClick={resetZoom}>Reset Zoom</button>

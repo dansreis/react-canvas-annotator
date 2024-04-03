@@ -4,9 +4,9 @@ import { render, screen } from "@testing-library/react";
 import Board from "../Board";
 import "@testing-library/jest-dom"; // This needs to be here for now.
 
-describe("Button component", () => {
-  it("Button should render correctly", () => {
-    render(<Board />);
+describe("Board component", () => {
+  it("Board should render correctly", () => {
+    render(<Board items={[]} imageSrc={""} />);
     const board = screen.getByRole("board");
     expect(board).toBeInTheDocument();
   });
