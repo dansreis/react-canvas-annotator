@@ -9,10 +9,26 @@ export type BoardProps = {
   primary?: boolean;
   items: CanvasObject[];
   imageSrc: string;
+  initialStatus?: {
+    draggingEnabled?: boolean;
+    currentZoom?: number;
+    scaleRatio?: number;
+  };
+  onResetZoom?: () => void;
+  onZoomChange?: (currentZoom: number) => void;
+  onToggleDragging?: (currentStatus: boolean) => void;
+  onLoadedImage?: ({
+    width,
+    height,
+  }: {
+    width: number;
+    height: number;
+  }) => void;
 };
 
 export type BoardActions = {
   toggleDragging: (value?: boolean) => void;
+  resetZoom: () => void;
 };
 
 type CanvasAnnotationState = {
@@ -28,27 +44,49 @@ const StyledCanvas = styled.div`
 `;
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
-  ({ primary = true, imageSrc }, ref) => {
+  (
+    {
+      primary = true,
+      imageSrc,
+      initialStatus,
+      onToggleDragging,
+      onResetZoom,
+      onZoomChange,
+      onLoadedImage,
+    },
+    ref,
+  ) => {
     // Set board actions
     React.useImperativeHandle(ref, () => ({
       toggleDragging() {
-        console.log("dragging!");
+        const newStatus = !draggingEnabled;
+        setDraggingEnabled(newStatus);
+        onToggleDragging?.(newStatus);
+      },
+      resetZoom() {
+        editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        onResetZoom?.();
       },
     }));
     const { editor, onReady } = useFabricJSEditor();
 
+    const [currentZoom, setCurrentZoom] = useState<number>(
+      initialStatus?.currentZoom || 100,
+    );
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [currentZoom, setCurrentZoom] = useState<number>(100);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [scaleRatio, setScaleRation] = useState<number>(100);
+    const [scaleRatio, setScaleRation] = useState(
+      initialStatus?.scaleRatio || 100,
+    );
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [imageSize, setImageSize] = useState({
       width: 0,
       height: 0,
     });
-
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [draggingEnabled, setDraggingEnabled] = useState(false);
+    const [draggingEnabled, setDraggingEnabled] = useState(
+      initialStatus?.draggingEnabled || false,
+    );
 
     useEffect(() => {
       const parentCanvasElement = document.getElementById(
@@ -90,6 +128,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             originY: "middle",
           });
           canvas!.renderAll();
+          onLoadedImage?.({ width: img.width ?? 0, height: img.height ?? 0 });
         },
         { selectable: false },
       );
@@ -182,12 +221,19 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // });
 
       editor.canvas.renderAll();
-    }, [primary, draggingEnabled, editor, imageSrc]);
+    }, [
+      primary,
+      draggingEnabled,
+      editor,
+      imageSrc,
+      onLoadedImage,
+      onZoomChange,
+    ]);
 
-    // TODO: Make sure this makes sense..
-    // const resetZoom = () => {
-    //   editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-    // };
+    // Update zoom parent value
+    useEffect(() => {
+      onZoomChange?.(Math.round(currentZoom));
+    }, [currentZoom, onZoomChange]);
 
     // const getActiveObjects = () => {
     //   console.log(editor?.canvas.getActiveObjects());
@@ -265,10 +311,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
     //   editor?.canvas.add(rect);
     //   // setAction({ primitive: "rectangle", operation: "add" });
-    // };
-
-    // const draggingState = () => {
-    //   setDraggingEnabled(!draggingEnabled);
     // };
 
     // const getVisible = () => {
