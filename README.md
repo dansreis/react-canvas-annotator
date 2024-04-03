@@ -1,15 +1,15 @@
 <div align="center">
-<img src="./logo.svg" alt="react-image-annotator" />
+<img src="./docs/logo.svg" alt="react-canvas-annotator" />
 </div>
 
-# react-image-annotator
+# react-canvas-annotator
 
 > Image Annotator Component for React Applications
 
-[![NPM](https://img.shields.io/npm/v/@dansreis/react-image-annotator)](https://www.npmjs.com/package/@dansreis/react-image-annotator)
-[![npm](https://img.shields.io/npm/dm/@dansreis/react-image-annotator)](https://www.npmjs.com/package/@dansreis/react-image-annotator)
-[![Build Status](https://github.com/dansreis/react-image-annotator/actions/workflows/main.yml/badge.svg)](https://github.com/dansreis/react-image-annotator/actions)
-![Github All Contributors](https://img.shields.io/github/all-contributors/dansreis/react-image-annotator)
+[![NPM](https://img.shields.io/npm/v/@dansreis/react-canvas-annotator)](https://www.npmjs.com/package/@dansreis/react-canvas-annotator)
+[![npm](https://img.shields.io/npm/dm/@dansreis/react-canvas-annotator)](https://www.npmjs.com/package/@dansreis/react-canvas-annotator)
+[![Build Status](https://github.com/dansreis/react-canvas-annotator/actions/workflows/main.yml/badge.svg)](https://github.com/dansreis/react-canvas-annotator/actions)
+![Github All Contributors](https://img.shields.io/github/all-contributors/dansreis/react-canvas-annotator)
 
 
 ## Features
@@ -20,40 +20,37 @@
 - [ ] image zoom and drag
 - [ ] Categorize annotations with colors and label
 
-![Screenshot of Annotator](https://user-images.githubusercontent.com/1910070/51199716-83c72080-18c5-11e9-837c-c3a89c8caef4.png)
+![Screenshot of Annotator](docs/annotations-board.png)
 
 ## Usage
 
-`npm install @dansreis/react-image-annotator`
+`npm install @dansreis/react-canvas-annotator`
 
 ```javascript
 import React from "react";
-import ReactImageAnnotate from "react-image-annotate";
+import Board  from "react-canvas-annotator";
 
 const App = () => (
-  <ReactImageAnnotate
-    labelImages
-    regionClsList={["Alpha", "Beta", "Charlie", "Delta"]}
-    regionTagList={["tag1", "tag2", "tag3"]}
-    images={[
-      {
-        src: "https://placekitten.com/408/287",
-        name: "Image 1",
-        regions: []
-      }
-    ]}
-  />
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      width: "800px",
+      height: "500px",
+      border: "1px solid black",
+    }}
+  >
+    <Board
+      ref={ref}
+      imageSrc={"example.png"}
+      items={[]}
+    />
+  </div>
 );
 
 export default App;
 
-```
-
-To get the proper fonts, make sure to import the Inter UI or Roboto font, the
-following line added to a css file should suffice.
-
-```css
-@import url("https://rsms.me/inter/inter.css");
 ```
 
 ## Props
@@ -62,30 +59,9 @@ All of the following properties can be defined on the Annotator...
 
 | Prop                     | Type (\* = required)                             | Description                                                                             | Default       |
 | ------------------------ | ------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------- |
-| `taskDescription`        | \*`string`                                       | Markdown description for what to do in the image.                                       |               |
-| `allowedArea`            | `{ x: number, y: number, w: number, h: number }` | Area that is available for annotation.                                                  | Entire image. |
-| `regionTagList`          | `Array<string>`                                  | Allowed "tags" (mutually inclusive classifications) for regions.                        |               |
-| `regionClsList`          | `Array<string>`                                  | Allowed "classes" (mutually exclusive classifications) for regions.           
-| `regionColorList`        | `Array<string>`                                  | Custom color list for regions. Default colors are used if not specified.
-| `preselectCls`          | `string`                                          |  Put in the class that should be preselected when creating a new Box/Polygon etc.           |               |
-| `imageTagList`           | `Array<string>`                                  | Allowed tags for entire image.                                                          |               |
-| `imageClsList`           | `Array<string>`                                  | Allowed classes for entire image.                                                       |               |
-| `enabledTools`           | `Array<string>`                                  | Tools allowed to be used. e.g. "select", "create-point", "create-box", "create-polygon" | Everything.   |
-| `showTags`               | `boolean`                                        | Show tags and allow tags on regions.                                                    | `true`        |
-| `selectedImage`          | `string`                                         | URL of initially selected image.                                                        |               |
-| `images`                 | `Array<Image>`                                   | Array of images to load into annotator                                                  |               |
-| `showPointDistances`     | `boolean`                                        | Show distances between points.                                                          | `false`       |
-| `pointDistancePrecision` | `number`                                         | Precision on displayed points (e.g. 3 => 0.123)                                         |               |
-| `onExit`                 | `MainLayoutState => any`                         | Called when "Save" is called.                                                           |               |
-| `RegionEditLabel`        | `Node`                                           | React Node overriding the form to update the region (see [`RegionLabel`](https://github.com/waoai/react-image-annotate/blob/master/src/RegionLabel/index.js))                                                          |               |
-| `enabledRegionProps`     | `boolean`                                        | Which properties to show in region edit popup ("class", "tags", "name", "comment")      | [`class`, `name`] |
-| `hidePrev`               | `boolean`                                        | Hide `Previous Image` button from the header bar.                                       | `false`       |
-| `hideNext`               | `boolean`                                        | Hide `Next Image` button from the header bar.                                           | `false`       |
-| `hideClone`              | `boolean`                                        | Hide `Clone` button from the header bar.                                                | `false`       |
-| `hideSettings`           | `boolean`                                        | Hide `Settings` button from the header bar.                                             | `false`       |
-| `hideFullScreen`         | `boolean`                                        | Hide `FullScreen/Window` button from the header bar.                                    | `false`       |
-| `hideSave`               | `boolean`                                        | Hide `Save` button from the header bar.                                                 | `false`       |
-| `userReducer`            | `(state, action) => state`                       | User defined reducer that receives every event triggered within the annotator. See demo site for example. | |
+| `TODO1`        | \*`string`                                       | Markdown description for what to do in the image.                                       |               |
+| `TODO2`            | `{ x: number, y: number }` | Area that is available for annotation.                                                  | Entire image. |
+
 
 ## Developers
 
@@ -96,13 +72,22 @@ To begin developing run the following commands in the cloned repo.
 1. `npm install`
 2. `npm start`
 
-Then navigate to http://localhost:5173/ and start testing.
+Then navigate to http://localhost:6006/ and start testing.
 
-See more details in the [contributing guidelines](https://github.com/waoai/react-image-annotate/wiki/Setup-for-Development).
+See more details in the [contributing guidelines](https://github.com/dansreis/react-canvas-annotator/blob/main/CONTRIBUTING.md).
 
 ### Icons
 
 Consult these icon repositories:
 
-- [Material Icons](https://material.io/tools/icons/)
-- [Font Awesome Icons](https://fontawesome.com/icons?d=gallery&m=free)
+- [Styled Components](https://material.io/tools/icons/)
+- [FabricJS](https://github.com/fabricjs/fabric.js)
+
+## Donations
+<a href="https://www.buymeacoffee.com/dansreis" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+## License
+
+MIT © [Daniel Reis](https://github.com/dansreis)
+
+Feel free to collaborate.
