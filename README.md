@@ -82,6 +82,7 @@ Consult these icon repositories:
 
 - [Styled Components](https://material.io/tools/icons/)
 - [FabricJS](https://github.com/fabricjs/fabric.js)
+- [FabricJS-React](https://github.com/asotog/fabricjs-react)
 
 ## Donations
 <a href="https://www.buymeacoffee.com/dansreis" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
