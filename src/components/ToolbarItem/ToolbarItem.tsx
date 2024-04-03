@@ -20,7 +20,7 @@ const StyledDiv = styled.div<Omit<ToolbarItemProps, "iconName">>`
   align-items: center;
   justify-content: center;
   border: 0;
-  font-family: "Roboto";
+  font-family: Roboto;
   font-style: normal;
   font-size: ${(props) =>
     props.size === "small"
