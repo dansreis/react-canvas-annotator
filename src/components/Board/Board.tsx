@@ -8,7 +8,7 @@ import styled from "styled-components";
 export type BoardProps = {
   primary?: boolean;
   items: CanvasObject[];
-  imageSrc: string;
+  image: { name: string; src: string };
   initialStatus?: {
     draggingEnabled?: boolean;
     currentZoom?: number;
@@ -30,6 +30,7 @@ export type BoardActions = {
   toggleDragging: (value?: boolean) => void;
   resetZoom: () => void;
   deleteSelectedObjects: () => void;
+  downloadImage: () => void;
 };
 
 type CanvasAnnotationState = {
@@ -48,7 +49,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
   (
     {
       primary = true,
-      imageSrc,
+      image,
       initialStatus,
       items,
       onToggleDragging,
@@ -79,6 +80,73 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           });
           editor?.canvas.discardActiveObject();
         }
+      },
+      downloadImage() {
+        // Create a temporary canvas to compose original image and annotations
+        const tempCanvas = document.createElement("canvas");
+        const tempCtx = tempCanvas.getContext("2d")!;
+
+        // Get the original image data from the canvas
+        const originalImageSrc = image.src; // Provide the path to your original image
+        const originalImage = new Image();
+        originalImage.src = originalImageSrc;
+
+        // Wait for the original image to load before composing
+        originalImage.onload = function () {
+          // Set the size of the temporary canvas to match the original image
+          tempCanvas.width = originalImage.width;
+          tempCanvas.height = originalImage.height;
+
+          // Draw the original image onto the temporary canvas
+          tempCtx.drawImage(originalImage, 0, 0);
+
+          // Get the Fabric.js canvas instance
+          // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+          // const canvas = editor?.canvas!;
+          // const fabricCanvas = canvas.getObjects();
+          // console.log(fabricCanvas[0]);
+
+          // items.forEach((item) => {
+          //   const polygon = new fabric.Polygon(item.coords, {
+          //     name: `ID_${item.id}`,
+          //     fill: undefined,
+          //     stroke: "red",
+          //     strokeWidth: 1,
+          //   });
+          //   // tempCtx.save();
+          //   polygon.render(tempCtx);
+          //   // tempCtx.restore();
+          // });
+
+          // Loop through all objects on the Fabric.js canvas and draw them onto the temporary canvas
+          // fabricCanvas.forEach((obj) => {
+          //   const scaleFactorX = tempCanvas.width / canvas.width!;
+          //   const scaleFactorY = tempCanvas.height / canvas.height!;
+
+          //   console.log({ scaleFactorX, scaleFactorY });
+
+          //   // Adjust top and left positions based on the scale
+          //   const left = obj.left! * scaleFactorX;
+          //   const top = obj.top! * scaleFactorY;
+
+          //   tempCtx.save();
+          //   tempCtx.translate(0, 0);
+          //   tempCtx.scale(scaleFactorX, scaleFactorY);
+          //   obj.render(tempCtx);
+          //   tempCtx.restore();
+          // });
+
+          // Convert the composed image on the temporary canvas to a data URL
+          const composedDataURL = tempCanvas.toDataURL("image/png");
+
+          // Create a temporary anchor element
+          const link = document.createElement("a");
+          link.href = composedDataURL;
+          link.download = image.name; // Set the desired filename
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        };
       },
     }));
     const { editor, onReady } = useFabricJSEditor();
@@ -121,7 +189,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.defaultCursor = draggingEnabled ? "pointer" : "default";
 
       fabric.Image.fromURL(
-        imageSrc,
+        image.src,
         (img) => {
           const { canvas } = editor;
           const scaleRatio = Math.min(
@@ -172,6 +240,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           this.lastPosX = evt.clientX;
           this.lastPosY = evt.clientY;
 
+          const pointer = editor.canvas.getPointer(evt);
+          console.log(`x: ${pointer.x} y: ${pointer.y}`);
           opt.e.preventDefault();
           opt.e.stopPropagation();
         },
@@ -233,14 +303,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // });
 
       editor.canvas.renderAll();
-    }, [
-      primary,
-      draggingEnabled,
-      editor,
-      imageSrc,
-      onLoadedImage,
-      onZoomChange,
-    ]);
+    }, [primary, draggingEnabled, editor, image, onLoadedImage, onZoomChange]);
 
     // Update zoom parent value
     useEffect(() => {
@@ -262,8 +325,14 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         return { x, y };
       };
 
+      // Clear all objects from canvas
+      editor?.canvas?.getObjects().forEach((o) => editor?.canvas?.remove(o));
+      editor?.canvas?.discardActiveObject();
+      editor?.canvas?.renderAll();
+
       for (const item of items) {
         const polygon = new fabric.Polygon(item.coords.map(toScaledCoord), {
+          name: `ID_${item.id}`,
           fill: undefined,
           stroke: "red",
           strokeWidth: 0.3,

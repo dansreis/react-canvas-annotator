@@ -18,12 +18,13 @@ Button component with different props.
 import Board {BoardActions} from "react-canvas-annotator";
 
 const Example = () => {
+  const image = {name: "test", src: "http://imagesource.com/test.png"}
   const ref = React.createRef<BoardActions>();
   return (
       <Board
         primary
         ref={ref}
-        imageSrc={"holder-min.jpg"}
+        image={image}
         items={[]}
       />
   );

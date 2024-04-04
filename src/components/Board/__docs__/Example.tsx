@@ -13,7 +13,7 @@ const StyledP = styled.p`
   padding: 3px;
 `;
 
-const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
+const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
   const ref = React.createRef<BoardActions>();
 
   const [toggleStatus, setToggleStatus] = useState(false);
@@ -28,6 +28,9 @@ const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
         <button onClick={() => ref.current?.resetZoom()}>Reset Zoom</button>
         <button onClick={() => ref.current?.deleteSelectedObjects()}>
           Delete Selected
+        </button>
+        <button onClick={() => ref.current?.downloadImage()}>
+          Download Image
         </button>
       </StyledDiv>
       <StyledDiv>
@@ -46,7 +49,7 @@ const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
         <Board
           ref={ref}
           primary={primary}
-          imageSrc={imageSrc}
+          image={image}
           items={items}
           onToggleDragging={(s) => setToggleStatus(s)}
           onZoomChange={(v) => setCurrentZoom(v)}

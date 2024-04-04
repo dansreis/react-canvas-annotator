@@ -304,7 +304,7 @@ type Story = StoryObj<typeof Example>;
 export const Main: Story = {
   args: {
     primary: true,
-    imageSrc: "holder-min.jpg",
+    image: { name: "holder-min", src: "holder-min.jpg" },
     items: ITEMS,
   },
 };
