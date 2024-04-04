@@ -199,7 +199,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           this.drawingPolygon = drawingPolygon;
 
           // Extract coords for polygon drawing
-          const pointer = editor?.canvas.getPointer(opt.e, true);
+          const pointer = editor?.canvas.getPointer(opt.e);
           const lastClickCoords = { x: pointer.x, y: pointer.y };
           this.lastClickCoords = lastClickCoords;
 
@@ -247,32 +247,27 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               this.lastPosY = e.clientY;
             }
           } else if (this.drawingPolygon) {
-            const lineId = "lineId";
-            const pointer = editor?.canvas.getPointer(opt.e, true);
+            const pointer = editor?.canvas.getPointer(opt.e);
 
-            const { initialX, initialY } = {
-              initialX: this.lastClickCoords?.x ?? 0,
-              initialY: this.lastClickCoords?.y ?? 0,
-            };
-            const previousLine = editor.canvas
+            const polygonId = "polygonId";
+            const previousPolygon = editor.canvas
               .getObjects()
-              .find((o) => o.name === lineId);
+              .find((o) => o.name === polygonId);
 
-            if (previousLine) editor.canvas.remove(previousLine);
+            if (previousPolygon) editor.canvas.remove(previousPolygon);
 
-            const line = new fabric.Line(
-              [initialX, initialY, pointer.x, pointer.y],
-              {
-                name: lineId,
-                stroke: "red",
-                strokeWidth: 2,
-                cornerColor: "blue",
-                cornerStyle: "circle",
-                selectable: false,
-              },
-            );
+            const polygonPoints =
+              this.polygonPoints?.concat({ x: pointer.x, y: pointer.y }) ?? [];
 
-            editor.canvas.add(line);
+            const newPolygon = new fabric.Polyline(polygonPoints, {
+              name: polygonId,
+              fill: "rgba(255,0,0,0.4)",
+              stroke: "red",
+              strokeWidth: 2,
+              hasBorders: false,
+              hasControls: false,
+            });
+            editor.canvas.add(newPolygon);
           }
 
           opt.e.preventDefault();
