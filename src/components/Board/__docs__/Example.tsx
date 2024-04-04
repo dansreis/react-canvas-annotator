@@ -13,7 +13,7 @@ const StyledP = styled.p`
   padding: 3px;
 `;
 
-const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
+const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
   const ref = React.createRef<BoardActions>();
 
   const [toggleStatus, setToggleStatus] = useState(false);
@@ -30,6 +30,9 @@ const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
           Delete Selected
         </button>
         <button onClick={() => ref.current?.drawPolygon()}>Draw Polygon</button>
+        <button onClick={() => ref.current?.downloadImage()}>
+          Download Image
+        </button>
         <button onClick={() => ref.current?.randomAction1()}>
           RandomAction (1)
         </button>
@@ -53,7 +56,7 @@ const Example: FC<BoardProps> = ({ primary = true, items, imageSrc }) => {
         <Board
           ref={ref}
           primary={primary}
-          imageSrc={imageSrc}
+          image={image}
           items={items}
           onToggleDragging={(s) => setToggleStatus(s)}
           onZoomChange={(v) => setCurrentZoom(v)}
