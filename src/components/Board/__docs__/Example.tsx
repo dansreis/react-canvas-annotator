@@ -1,17 +1,5 @@
 import React, { FC, useState } from "react";
 import Board, { BoardActions, BoardProps } from "../Board";
-import styled from "styled-components";
-
-const StyledDiv = styled.div`
-  display: flex;
-  gap: 10px;
-`;
-
-const StyledP = styled.p`
-  display: flex;
-  border: 1px solid black;
-  padding: 3px;
-`;
 
 const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
   const ref = React.createRef<BoardActions>();
@@ -21,7 +9,7 @@ const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
 
   return (
     <>
-      <StyledDiv>
+      <div style={{ display: "flex", gap: "10px" }}>
         <button onClick={() => ref.current?.toggleDragging()}>
           Toggle Dragging [{toggleStatus ? "ON" : "OFF"}]
         </button>
@@ -39,10 +27,15 @@ const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
         <button onClick={() => ref.current?.randomAction2()}>
           RandomAction (2)
         </button>
-      </StyledDiv>
-      <StyledDiv>
-        <StyledP>Current zoom: {currentZoom}</StyledP>
-      </StyledDiv>
+      </div>
+      <div style={{ display: "flex", gap: "10px" }}>
+        <div
+          style={{ display: "flex", border: "1 solid black", padding: "3px" }}
+        >
+          Current zoom: {currentZoom}
+        </div>
+      </div>
+
       <div
         style={{
           display: "flex",

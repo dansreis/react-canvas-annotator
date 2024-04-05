@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fabric } from "fabric";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
-import tokens from "../../tokens";
 import { CanvasObject } from "./types";
-import styled from "styled-components";
 
 export type BoardProps = {
   primary?: boolean;
@@ -45,11 +43,6 @@ type CanvasAnnotationState = {
   lastClickCoords?: { x: number; y: number };
   polygonPoints?: { x: number; y: number }[];
 };
-
-const StyledCanvas = styled.div`
-  width: 100%;
-  height: 100%;
-`;
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
   (
@@ -200,9 +193,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       }
 
       // Background color of canvas
-      editor.canvas.backgroundColor = primary
-        ? tokens.primary.backgroundColor
-        : tokens.secondary.backgroundColor;
+      editor.canvas.backgroundColor = "#ffffff";
 
       // Set FabricJS canvas width and height
       editor.canvas.setWidth(parentCanvasElement.clientWidth);
@@ -466,9 +457,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     // };
 
     return (
-      <StyledCanvas id="react-annotator-canvas" role="board">
+      <div
+        id="react-annotator-canvas"
+        data-testid="react-annotator-canvas"
+        style={{ width: "100%", height: "100%" }}
+      >
         <FabricJSCanvas className="fabricjs-canvas" onReady={onReady} />
-      </StyledCanvas>
+      </div>
     );
   },
 );
