@@ -78,7 +78,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         onResetZoom?.();
       },
       deleteSelectedObjects() {
-        editor?.deleteSelected();
         const activeObjects = editor?.canvas.getActiveObjects();
         if (activeObjects) {
           activeObjects.forEach((activeObject) => {
@@ -279,6 +278,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               this.polygonPoints = [this.lastClickCoords];
             }
 
+            if (this.polygonPoints?.length === 4) {
+              setDrawingPolygon(false);
+              return;
+            }
+
             // Draw the polygon with the existing coords
             // if (this.polygonPoints?.length ?? 0 >= 2) {
             //   const polygonId = "polygonId";
@@ -459,10 +463,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
     //   editor?.canvas.add(rect);
     //   // setAction({ primitive: "rectangle", operation: "add" });
-    // };
-
-    // const getVisible = () => {
-    //   console.log(editor?.canvas.getObjects()?.[0].visible);
     // };
 
     return (
