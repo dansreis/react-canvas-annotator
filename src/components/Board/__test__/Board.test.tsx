@@ -7,7 +7,7 @@ import "@testing-library/jest-dom"; // This needs to be here for now.
 describe("Board component", () => {
   it("Board should render correctly", () => {
     render(<Board items={[]} image={{ name: "test", src: "test.png" }} />);
-    const board = screen.getByRole("board");
+    const board = screen.getByTestId("react-annotator-canvas");
     expect(board).toBeInTheDocument();
   });
 });
