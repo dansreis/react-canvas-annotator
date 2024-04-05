@@ -112,3 +112,81 @@ export const canvasImageDownload = (image: { name: string; src: string }) => {
     document.body.removeChild(link);
   };
 };
+
+/**
+ *
+ * Finds an object in a canvas according to its name
+ *
+ * @param canvas html canvas to look for the object
+ * @param name object identifier
+ * @returns
+ */
+export const findObjectByName = (canvas: fabric.Canvas, name: string) => {
+  return canvas.getObjects().find((o) => o.name === name);
+};
+
+/**
+ *
+ * Deletes an object by its name
+ *
+ * @param canvas html canvas to look for the object
+ * @param name object identifier
+ */
+export const deleteObjectByName = (canvas: fabric.Canvas, name: string) => {
+  const obj = findObjectByName(canvas, name);
+  if (obj) canvas.remove(obj);
+};
+
+/**
+ *
+ * Deletes an object
+ *
+ * @param canvas html canvas to look for the object
+ * @param obj object to delete
+ */
+export const deleteObject = (canvas: fabric.Canvas, obj: fabric.Object) => {
+  if (obj) canvas.remove(obj);
+};
+
+/**
+ *
+ * @param name name of the object
+ * @param points array of points to create the polygon
+ * @param options options of the polygon (fill, stroke, controls..)
+ * @param isPolyline if it should create a the polygon as a  polyline
+ * @returns
+ */
+export const createPolygon = ({
+  name,
+  points,
+  options = {
+    fill: "rgba(255,0,0,0.4)",
+    stroke: "red",
+    strokeWidth: 2,
+    hasBorders: false,
+    hasControls: false,
+  },
+  isPolyline = false,
+}: {
+  name: string;
+  points: { x: number; y: number }[];
+  options?: {
+    fill?: string;
+    stroke?: string;
+    strokeWidth?: number;
+    hasBorders?: boolean;
+    hasControls?: boolean;
+  };
+  isPolyline?: boolean;
+}) => {
+  if (isPolyline) {
+    return new fabric.Polyline(points, {
+      name,
+      ...options,
+    });
+  }
+  return new fabric.Polygon(points, {
+    name,
+    ...options,
+  });
+};

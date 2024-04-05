@@ -245,22 +245,22 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             const pointer = editor?.canvas.getPointer(opt.e);
 
             const polygonId = "polygonId";
-            const previousPolygon = editor.canvas
-              .getObjects()
-              .find((o) => o.name === polygonId);
+            const previousPolygon = fabricUtils.findObjectByName(
+              editor.canvas,
+              polygonId,
+            );
 
-            if (previousPolygon) editor.canvas.remove(previousPolygon);
+            if (previousPolygon)
+              fabricUtils.deleteObject(editor.canvas, previousPolygon);
 
+            // Polygon "clicked" points with the cursor current pointer
             const polygonPoints =
               this.polygonPoints?.concat({ x: pointer.x, y: pointer.y }) ?? [];
 
-            const newPolygon = new fabric.Polyline(polygonPoints, {
+            const newPolygon = fabricUtils.createPolygon({
               name: polygonId,
-              fill: "rgba(255,0,0,0.4)",
-              stroke: "red",
-              strokeWidth: 2,
-              hasBorders: false,
-              hasControls: false,
+              points: polygonPoints,
+              isPolyline: true,
             });
             editor.canvas.add(newPolygon);
           }
