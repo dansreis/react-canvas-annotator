@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { fabric } from "fabric";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 import { CanvasObject } from "./types";
+import * as fabricUtils from "../../fabricUtils";
 
 export type BoardProps = {
   primary?: boolean;
@@ -71,13 +72,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         onResetZoom?.();
       },
       deleteSelectedObjects() {
-        const activeObjects = editor?.canvas.getActiveObjects();
-        if (activeObjects) {
-          activeObjects.forEach((activeObject) => {
-            editor?.canvas.remove(activeObject);
-          });
-          editor?.canvas.discardActiveObject();
-        }
+        const canvas = editor?.canvas;
+        if (canvas) fabricUtils.deleteSelected(canvas);
       },
       drawPolygon() {
         setDrawingPolygon(!drawingPolygon);
@@ -96,71 +92,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         console.log("randomAction2");
       },
       downloadImage() {
-        // Create a temporary canvas to compose original image and annotations
-        const tempCanvas = document.createElement("canvas");
-        const tempCtx = tempCanvas.getContext("2d")!;
-
-        // Get the original image data from the canvas
-        const originalImageSrc = image.src; // Provide the path to your original image
-        const originalImage = new Image();
-        originalImage.src = originalImageSrc;
-
-        // Wait for the original image to load before composing
-        originalImage.onload = function () {
-          // Set the size of the temporary canvas to match the original image
-          tempCanvas.width = originalImage.width;
-          tempCanvas.height = originalImage.height;
-
-          // Draw the original image onto the temporary canvas
-          tempCtx.drawImage(originalImage, 0, 0);
-
-          // Get the Fabric.js canvas instance
-          // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-          // const canvas = editor?.canvas!;
-          // const fabricCanvas = canvas.getObjects();
-          // console.log(fabricCanvas[0]);
-
-          // items.forEach((item) => {
-          //   const polygon = new fabric.Polygon(item.coords, {
-          //     name: `ID_${item.id}`,
-          //     fill: undefined,
-          //     stroke: "red",
-          //     strokeWidth: 1,
-          //   });
-          //   // tempCtx.save();
-          //   polygon.render(tempCtx);
-          //   // tempCtx.restore();
-          // });
-
-          // Loop through all objects on the Fabric.js canvas and draw them onto the temporary canvas
-          // fabricCanvas.forEach((obj) => {
-          //   const scaleFactorX = tempCanvas.width / canvas.width!;
-          //   const scaleFactorY = tempCanvas.height / canvas.height!;
-
-          //   console.log({ scaleFactorX, scaleFactorY });
-
-          //   // Adjust top and left positions based on the scale
-          //   const left = obj.left! * scaleFactorX;
-          //   const top = obj.top! * scaleFactorY;
-
-          //   tempCtx.save();
-          //   tempCtx.translate(0, 0);
-          //   tempCtx.scale(scaleFactorX, scaleFactorY);
-          //   obj.render(tempCtx);
-          //   tempCtx.restore();
-          // });
-
-          // Convert the composed image on the temporary canvas to a data URL
-          const composedDataURL = tempCanvas.toDataURL("image/png");
-
-          // Create a temporary anchor element
-          const link = document.createElement("a");
-          link.href = composedDataURL;
-          link.download = image.name; // Set the desired filename
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        };
+        fabricUtils.canvasImageDownload(image);
       },
     }));
     const { editor, onReady } = useFabricJSEditor();
@@ -404,10 +336,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         return { x, y };
       };
 
+      const canvas = editor?.canvas;
+      if (!canvas) return;
+
       // Clear all objects from canvas
-      editor?.canvas?.getObjects().forEach((o) => editor?.canvas?.remove(o));
-      editor?.canvas?.discardActiveObject();
-      editor?.canvas?.renderAll();
+      fabricUtils.deleteAll(editor?.canvas);
 
       for (const item of items) {
         const polygon = new fabric.Polygon(item.coords.map(toScaledCoord), {
@@ -416,7 +349,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           stroke: "red",
           strokeWidth: 0.3,
         });
-        editor?.canvas.add(polygon);
+        canvas.add(polygon);
       }
     }, [editor?.canvas, imageSize.height, imageSize.width, items, scaleRatio]);
 
