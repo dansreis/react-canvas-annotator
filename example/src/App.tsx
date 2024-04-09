@@ -5,7 +5,7 @@ import "./App.css";
 function App() {
   return (
     <>
-      <Board items={[]} imageSrc={"annotations-board.png"} />
+      <Board items={[]} image={{name: "annotations-board",src:"annotations-board.png"}} />
     </>
   );
 }

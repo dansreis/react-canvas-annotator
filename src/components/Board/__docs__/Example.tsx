@@ -17,8 +17,15 @@ const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
         <button onClick={() => ref.current?.deleteSelectedObjects()}>
           Delete Selected
         </button>
+        <button onClick={() => ref.current?.drawPolygon()}>Draw Polygon</button>
         <button onClick={() => ref.current?.downloadImage()}>
           Download Image
+        </button>
+        <button onClick={() => ref.current?.randomAction1()}>
+          RandomAction (1)
+        </button>
+        <button onClick={() => ref.current?.randomAction2()}>
+          RandomAction (2)
         </button>
       </div>
       <div style={{ display: "flex", gap: "10px" }}>
@@ -28,6 +35,7 @@ const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
           Current zoom: {currentZoom}
         </div>
       </div>
+
       <div
         style={{
           display: "flex",
