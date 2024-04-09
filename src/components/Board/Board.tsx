@@ -97,7 +97,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         );
         const controls = line.points?.reduce<{
           [key: string]: fabric.Control;
-        }>((acc, point, index) => {
+        }>((acc, _point, index) => {
           acc["p" + index] = new fabricUtils.CustomControl(
             {
               positionHandler: fabricUtils.polygonPositionHandler,

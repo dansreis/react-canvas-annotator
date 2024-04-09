@@ -216,8 +216,8 @@ export class CustomControl extends fabric.Control {
  */
 export const polygonPositionHandler = function (
   this: CustomControl,
-  dim: { x: number; y: number },
-  finalMatrix: fabricTypes.TMat2D,
+  _dim: { x: number; y: number },
+  _finalMatrix: fabricTypes.TMat2D,
   fabricObject: fabric.Polyline,
 ) {
   const x =
@@ -253,7 +253,7 @@ export const getObjectSizeWithStroke = (object: fabric.Object) => {
  * More info: http://fabricjs.com/custom-controls-polygon
  */
 export const actionHandler = (
-  eventData: MouseEvent,
+  _eventData: MouseEvent,
   transform: fabricTypes.CustomTransform,
   x: number,
   y: number,
