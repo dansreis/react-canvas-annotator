@@ -79,13 +79,41 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         setDrawingPolygon(!drawingPolygon);
       },
       randomAction1() {
-        const line = new fabric.Line([0, 0, 40, 40], {
-          stroke: "reg",
-          strokeWidth: 2,
-          selectable: true,
-          hasBorders: true,
-        });
-
+        const line = new fabric.Polygon(
+          [
+            { x: 40, y: 40 },
+            { x: 120, y: 120 },
+          ],
+          {
+            stroke: "red",
+            strokeWidth: 2,
+            selectable: true,
+            hasBorders: false,
+            hasControls: true,
+            cornerStyle: "rect",
+            cornerColor: "rgba(113, 113, 117, 0.5)",
+            objectCaching: false,
+          },
+        );
+        const controls = line.points?.reduce<{
+          [key: string]: fabric.Control;
+        }>((acc, point, index) => {
+          acc["p" + index] = new fabricUtils.CustomControl(
+            {
+              positionHandler: fabricUtils.polygonPositionHandler,
+              actionHandler: fabricUtils.anchorWrapper(
+                index > 0 ? index - 1 : line.points!.length - 1,
+                fabricUtils.actionHandler,
+              ),
+              actionName: "modifyPolygon",
+            },
+            index,
+          );
+          return acc;
+        }, {});
+        if (controls) {
+          line.controls = controls;
+        }
         editor?.canvas.add(line);
       },
       randomAction2() {

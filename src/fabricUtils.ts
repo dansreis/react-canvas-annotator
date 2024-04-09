@@ -1,4 +1,5 @@
 import { fabric } from "fabric";
+import * as fabricTypes from "./fabricTypes";
 
 export const toPolygon = (object: fabric.Polyline) => {
   return new fabric.Polygon(object.points!, {
@@ -189,4 +190,134 @@ export const createPolygon = ({
     name,
     ...options,
   });
+};
+
+/**
+ * Custom FabricJS Control class with extra pointIndex
+ */
+export class CustomControl extends fabric.Control {
+  // Add an extra field pointIndex
+  pointIndex: number;
+
+  // Override the constructor to include the new field
+  constructor(options: Partial<fabric.Control>, pointIndex: number) {
+    // Call the constructor of the base class
+    super(options);
+
+    // Initialize the new field
+    this.pointIndex = pointIndex;
+  }
+}
+
+/**
+ * Define a function that can locate the controls.
+ * This function will be used both for drawing and for interaction.
+ * More info: http://fabricjs.com/custom-controls-polygon
+ */
+export const polygonPositionHandler = function (
+  this: CustomControl,
+  dim: { x: number; y: number },
+  finalMatrix: fabricTypes.TMat2D,
+  fabricObject: fabric.Polyline,
+) {
+  const x =
+    fabricObject!.points![this!.pointIndex!].x - fabricObject.pathOffset.x;
+  const y =
+    fabricObject!.points![this!.pointIndex!].y - fabricObject.pathOffset.y;
+  return fabric.util.transformPoint(
+    new fabric.Point(x, y),
+    fabric.util.multiplyTransformMatrices(
+      fabricObject!.canvas!.viewportTransform!,
+      fabricObject.calcTransformMatrix(),
+    ),
+  );
+};
+
+/**
+ * More info: http://fabricjs.com/custom-controls-polygon
+ */
+export const getObjectSizeWithStroke = (object: fabric.Object) => {
+  const stroke = new fabric.Point(
+    object.strokeUniform ? 1 / object.scaleX! : 1,
+    object.strokeUniform ? 1 / object.scaleY! : 1,
+  ).multiply(object.strokeWidth!);
+  return new fabric.Point(object.width! + stroke.x, object.height! + stroke.y);
+};
+
+/**
+ * Define a function that will define what the control does
+ * This function will be called on every mouse move after a control has been clicked and is being dragged.
+ * The function receive as argument the mouse event, the current trasnform object and the current position in canvas coordinate
+ * transform.target is a reference to the current object being transformed,
+ *
+ * More info: http://fabricjs.com/custom-controls-polygon
+ */
+export const actionHandler = (
+  eventData: MouseEvent,
+  transform: fabricTypes.CustomTransform,
+  x: number,
+  y: number,
+) => {
+  const polygon = transform.target;
+  const currentControl = polygon.controls[polygon.__corner!] as CustomControl;
+  const mouseLocalPosition = polygon.toLocalPoint(
+    new fabric.Point(x, y),
+    "center",
+    "center",
+  );
+  const polygonBaseSize = getObjectSizeWithStroke(polygon);
+  const size = polygon._getTransformedDimensions(0, 0);
+  const finalPointPosition = {
+    x:
+      (mouseLocalPosition.x * polygonBaseSize.x) / size.x +
+      polygon.pathOffset!.x,
+    y:
+      (mouseLocalPosition.y * polygonBaseSize.y) / size.y +
+      polygon.pathOffset!.y,
+  };
+  polygon.points![currentControl.pointIndex] = new fabric.Point(
+    finalPointPosition.x,
+    finalPointPosition.y,
+  );
+  return true;
+};
+
+/**
+ * Define a function that can keep the polygon in the same position when we change its width/height/top/left.
+ *
+ * More info: http://fabricjs.com/custom-controls-polygon
+ */
+export const anchorWrapper = (
+  anchorIndex: number,
+  fn: (
+    eventData: MouseEvent,
+    transform: fabricTypes.CustomTransform,
+    x: number,
+    y: number,
+  ) => boolean,
+) => {
+  return function (
+    eventData: MouseEvent,
+    transform: fabricTypes.CustomTransform,
+    x: number,
+    y: number,
+  ) {
+    const fabricObject = transform.target;
+    const points = fabricObject.points!;
+    const pathOffset = fabricObject.pathOffset!;
+    const point = new fabric.Point(
+      points[anchorIndex].x - pathOffset.x,
+      points[anchorIndex].y - pathOffset.y,
+    );
+    const absolutePoint = fabric.util.transformPoint(
+      point,
+      fabricObject.calcTransformMatrix(),
+    );
+    const actionPerformed = fn(eventData, transform, x, y);
+    const polygonBaseSize = getObjectSizeWithStroke(fabricObject);
+    const newX = (points[anchorIndex].x - pathOffset.x) / polygonBaseSize.x;
+    const newY = (points[anchorIndex].y - pathOffset.y) / polygonBaseSize.y;
+    fabricObject.setPositionByOrigin(absolutePoint, newX + 0.5, newY + 0.5);
+    return actionPerformed;
+  };
 };
