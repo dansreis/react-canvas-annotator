@@ -314,6 +314,7 @@ export const anchorWrapper = (
       fabricObject.calcTransformMatrix(),
     );
     const actionPerformed = fn(eventData, transform, x, y);
+    fabricObject._setPositionDimensions?.({}); // TODO: Understand why this needs to be here. Migrate to 'setDimensions'.
     const polygonBaseSize = getObjectSizeWithStroke(fabricObject);
     const newX = (points[anchorIndex].x - pathOffset.x) / polygonBaseSize.x;
     const newY = (points[anchorIndex].y - pathOffset.y) / polygonBaseSize.y;

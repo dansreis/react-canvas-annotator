@@ -21,5 +21,6 @@ export type CustomTransform = Transform & {
       originX: number,
       originY: number,
     ) => void;
+    _setPositionDimensions?: (o: unknown) => unknown; // TODO: Understand why this needs to be here. Migrate to 'setDimensions'.
   };
 };

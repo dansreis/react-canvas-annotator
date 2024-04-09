@@ -86,9 +86,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           ],
           {
             stroke: "red",
-            strokeWidth: 2,
+            fill: undefined,
+            strokeWidth: 1,
             selectable: true,
-            hasBorders: false,
+            hasBorders: true,
             hasControls: true,
             cornerStyle: "rect",
             cornerColor: "rgba(113, 113, 117, 0.5)",
@@ -375,7 +376,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           name: `ID_${item.id}`,
           fill: undefined,
           stroke: "red",
-          strokeWidth: 0.3,
+          strokeWidth: 1, // TODO: Change here!
         });
         canvas.add(polygon);
       }
