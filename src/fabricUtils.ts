@@ -1,5 +1,6 @@
 import { fabric } from "fabric";
 import * as fabricTypes from "./fabricTypes";
+import { IPolylineOptions } from "fabric/fabric-impl";
 
 export const toPolygon = (object: fabric.Polyline) => {
   return new fabric.Polygon(object.points!, {
@@ -149,6 +150,7 @@ export const deleteObject = (canvas: fabric.Canvas, obj: fabric.Object) => {
   if (obj) canvas.remove(obj);
 };
 
+// TODO: Maybe remove this 'createPolygon' from here. Replace with 'createRect'.
 /**
  *
  * @param name name of the object
@@ -160,13 +162,7 @@ export const deleteObject = (canvas: fabric.Canvas, obj: fabric.Object) => {
 export const createPolygon = ({
   name,
   points,
-  options = {
-    fill: "rgba(255,0,0,0.4)",
-    stroke: "red",
-    strokeWidth: 2,
-    hasBorders: false,
-    hasControls: false,
-  },
+  options,
   isPolyline = false,
 }: {
   name: string;
@@ -180,16 +176,39 @@ export const createPolygon = ({
   };
   isPolyline?: boolean;
 }) => {
+  // Merge default options with user input
+  const _options = Object.assign(
+    {
+      fill: "rgba(255,0,0,0.4)",
+      stroke: "red",
+      strokeWidth: 2,
+      hasBorders: false,
+      hasControls: false,
+    },
+    options,
+  );
   if (isPolyline) {
     return new fabric.Polyline(points, {
       name,
-      ...options,
+      ..._options,
     });
   }
   return new fabric.Polygon(points, {
     name,
-    ...options,
+    ..._options,
   });
+};
+
+// TODO: Finish method
+export const createControllableObject = <T = fabric.Polygon | fabric.Polyline>(
+  FabricObj: new (
+    points: Array<{ x: number; y: number }>,
+    options?: IPolylineOptions,
+  ) => T,
+  points: { x: number; y: number }[],
+  options?: IPolylineOptions,
+) => {
+  return new FabricObj(points, options);
 };
 
 /**
