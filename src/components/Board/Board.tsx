@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { fabric } from "fabric";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 import { CanvasObject } from "./types";
-import * as fabricUtils from "../../fabricUtils";
+import * as fabricUtils from "../../fabric/utils";
+import * as fabricActions from "../../fabric/actions";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -71,7 +72,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       },
       deleteSelectedObjects() {
         const canvas = editor?.canvas;
-        if (canvas) fabricUtils.deleteSelected(canvas);
+        if (canvas) fabricActions.deleteSelected(canvas);
       },
       drawPolygon() {
         setDrawingPolygon(!drawingPolygon);
@@ -121,7 +122,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         console.log("randomAction2");
       },
       downloadImage() {
-        fabricUtils.canvasImageDownload(image);
+        fabricActions.canvasImageDownload(image);
       },
     }));
     const { editor, onReady } = useFabricJSEditor();
@@ -280,7 +281,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             );
 
             if (previousPolygon)
-              fabricUtils.deleteObject(editor.canvas, previousPolygon);
+              fabricActions.deleteObject(editor.canvas, previousPolygon);
 
             // Polygon "clicked" points with the cursor current pointer
             const polygonPoints =
@@ -368,7 +369,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       if (!canvas) return;
 
       // Clear all objects from canvas
-      fabricUtils.deleteAll(editor?.canvas);
+      fabricActions.deleteAll(editor?.canvas);
 
       for (const item of items) {
         const polygon = new fabric.Polygon(item.coords.map(toScaledCoord), {
