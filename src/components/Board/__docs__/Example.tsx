@@ -1,7 +1,7 @@
 import React, { FC, useState } from "react";
 import Board, { BoardActions, BoardProps } from "../Board";
 
-const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
+const Example: FC<BoardProps> = ({ items, image }) => {
   const ref = React.createRef<BoardActions>();
 
   const [toggleStatus, setToggleStatus] = useState(false);
@@ -48,7 +48,6 @@ const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
       >
         <Board
           ref={ref}
-          primary={primary}
           image={image}
           items={items}
           onToggleDragging={(s) => setToggleStatus(s)}

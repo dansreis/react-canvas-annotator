@@ -5,7 +5,6 @@ import { CanvasObject } from "./types";
 import * as fabricUtils from "../../fabricUtils";
 
 export type BoardProps = {
-  primary?: boolean;
   items: CanvasObject[];
   image: { name: string; src: string };
   initialStatus?: {
@@ -48,7 +47,6 @@ type CanvasAnnotationState = {
 const Board = React.forwardRef<BoardActions, BoardProps>(
   (
     {
-      primary = true,
       image,
       initialStatus,
       items,
@@ -338,7 +336,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
       editor.canvas.renderAll();
     }, [
-      primary,
       draggingEnabled,
       editor,
       image,
