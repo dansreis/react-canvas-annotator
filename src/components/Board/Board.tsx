@@ -298,6 +298,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
                 const pointer = editor?.canvas.getPointer(opt.e);
                 if (pointer && _opt.target?.oCoords) {
                   let isInside = false;
+                  let collisionPoint: string | undefined = undefined;
                   for (const pointKey in this.oCoords) {
                     const { tl, tr, bl, br } = this.oCoords[pointKey].corner;
                     const clickedOnCorner = fabricUtils.isCoordInsideCoords(
@@ -306,15 +307,24 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
                     );
                     if (clickedOnCorner) {
                       isInside = true;
+                      collisionPoint = pointKey;
                       break;
                     }
                   }
                   if (isInside) {
-                    console.log("inside_coords", pointer);
+                    console.log("inside_coords", pointer, collisionPoint);
+                    setDrawingPolygon(false);
                   }
                 }
               },
             );
+            // newPolygon.on(
+            //   "mousemove",
+            //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            //   function (this: ControllableObjectState, _opt) {
+            //     console.log("MOVING!!");
+            //   },
+            // );
             // newPolygon.setControlVisible("mtr", false);
             editor.canvas.add(newPolygon);
             editor.canvas.setActiveObject(newPolygon);
