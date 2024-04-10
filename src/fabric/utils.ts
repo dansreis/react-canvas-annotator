@@ -1,6 +1,7 @@
 import { fabric } from "fabric";
 import * as fabricTypes from "./types";
 import { IPolylineOptions } from "fabric/fabric-impl";
+import CustomControl from "./controls/CustomControl";
 
 export const toPolygon = (object: fabric.Polyline) => {
   return new fabric.Polygon(object.points!, {
@@ -85,23 +86,6 @@ export const createControllableObject = <T = fabric.Polygon | fabric.Polyline>(
 ) => {
   return new FabricObj(points, options);
 };
-
-/**
- * Custom FabricJS Control class with extra pointIndex
- */
-export class CustomControl extends fabric.Control {
-  // Add an extra field pointIndex
-  pointIndex: number;
-
-  // Override the constructor to include the new field
-  constructor(options: Partial<fabric.Control>, pointIndex: number) {
-    // Call the constructor of the base class
-    super(options);
-
-    // Initialize the new field
-    this.pointIndex = pointIndex;
-  }
-}
 
 /**
  * Define a function that can locate the controls.

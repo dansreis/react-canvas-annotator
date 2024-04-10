@@ -4,6 +4,7 @@ import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 import { CanvasObject } from "./types";
 import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
+import CustomControl from "../../fabric/controls/CustomControl";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -100,7 +101,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         const controls = line.points?.reduce<{
           [key: string]: fabric.Control;
         }>((acc, _point, index) => {
-          acc["p" + index] = new fabricUtils.CustomControl(
+          acc["p" + index] = new CustomControl(
             {
               positionHandler: fabricUtils.polygonPositionHandler,
               actionHandler: fabricUtils.anchorWrapper(
