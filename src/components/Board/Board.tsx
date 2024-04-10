@@ -4,7 +4,6 @@ import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 import { CanvasObject } from "./types";
 import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
-import { DEFAULT_POLYLINE_OPTIONS } from "../../fabric/const";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -44,6 +43,21 @@ type CanvasAnnotationState = {
   drawingPolygon?: boolean;
   lastClickCoords?: { x: number; y: number };
   polygonPoints?: { x: number; y: number }[];
+};
+
+type ControllableObjectState = {
+  oCoords: {
+    [key: string]: {
+      x: number;
+      y: number;
+      corner: {
+        tl: fabric.Point;
+        tr: fabric.Point;
+        bl: fabric.Point;
+        br: fabric.Point;
+      };
+    };
+  };
 };
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
@@ -222,8 +236,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             //   editor.canvas.add(newPolygon);
             // }
           }
-          opt.e.preventDefault();
-          opt.e.stopPropagation();
         },
       );
 
@@ -256,35 +268,75 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             const polygonPoints =
               this.polygonPoints?.concat({ x: pointer.x, y: pointer.y }) ?? [];
 
-            const newPolygon = new fabric.Polyline(polygonPoints, {
-              ...DEFAULT_POLYLINE_OPTIONS,
-              name: polygonId,
-              fill: "rgba(255, 99, 71, 0.2)",
-            });
-            editor.canvas.add(newPolygon);
-          }
+            // const newPolygon = new fabric.Polyline(polygonPoints, {
+            //   name: polygonId,
+            //   fill: "rgba(255, 99, 71, 0.2)",
+            //   stroke: "red",
+            //   strokeWidth: 1,
+            //   selectable: true,
+            //   hasBorders: true,
+            //   hasControls: true,
+            //   cornerStyle: "rect",
+            //   cornerColor: "rgba(113, 113, 117, 0.5)",
+            //   objectCaching: false,
+            // });
 
-          opt.e.preventDefault();
-          opt.e.stopPropagation();
+            const newPolygon = fabricUtils.createControllableObject(
+              fabric.Polyline,
+              polygonPoints,
+              {
+                name: polygonId,
+                fill: "rgba(255, 99, 71, 0.2)",
+                hasBorders: false,
+              },
+            );
+
+            newPolygon.on(
+              "mousedown",
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              function (this: ControllableObjectState, _opt) {
+                const pointer = editor?.canvas.getPointer(opt.e);
+                if (pointer && _opt.target?.oCoords) {
+                  let isInside = false;
+                  for (const pointKey in this.oCoords) {
+                    const { tl, tr, bl, br } = this.oCoords[pointKey].corner;
+                    const clickedOnCorner = fabricUtils.isCoordInsideCoords(
+                      pointer,
+                      [tl, tr, bl, br],
+                    );
+                    if (clickedOnCorner) {
+                      isInside = true;
+                      break;
+                    }
+                  }
+                  if (isInside) {
+                    console.log("inside_coords", pointer);
+                  }
+                }
+              },
+            );
+            // newPolygon.setControlVisible("mtr", false);
+            editor.canvas.add(newPolygon);
+            editor.canvas.setActiveObject(newPolygon);
+          }
         },
       );
 
-      editor.canvas.on("mouse:up", function (this: CanvasAnnotationState, opt) {
-        this.isDragging = false;
-        this.selection = true;
-
-        opt.e.preventDefault();
-        opt.e.stopPropagation();
-      });
+      editor.canvas.on(
+        "mouse:up",
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        function (this: CanvasAnnotationState, _opt) {
+          this.isDragging = false;
+          this.selection = true;
+        },
+      );
 
       // Selected Objects
       editor.canvas.on(
         "selection:created",
-        function (this: CanvasAnnotationState, opt) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        function (this: CanvasAnnotationState, _opt) {
           // console.log("SELECTED! ", opt.selected?.[0]);
-
-          opt.e.preventDefault();
-          opt.e.stopPropagation();
         },
       );
 

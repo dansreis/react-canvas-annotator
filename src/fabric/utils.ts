@@ -55,7 +55,7 @@ export const createControllableObject = <
 
   if ((controllableObject.points?.length ?? 0) > 0) {
     const controls = controllableObject.points?.reduce<{
-      [key: string]: fabric.Control;
+      [key: string]: CustomControl;
     }>((acc, _point, index) => {
       acc["p" + index] = new CustomControl(
         {
@@ -194,4 +194,23 @@ export const anchorWrapper = (
     fabricObject.setPositionByOrigin(absolutePoint, newX + 0.5, newY + 0.5);
     return actionPerformed;
   };
+};
+
+export const isCoordInsideCoords = (
+  point: { x: number; y: number },
+  vertices: { x: number; y: number }[],
+) => {
+  let isInside = false;
+  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+    if (
+      vertices[i].y > point.y !== vertices[j].y > point.y &&
+      point.x <
+        ((vertices[j].x - vertices[i].x) * (point.y - vertices[i].y)) /
+          (vertices[j].y - vertices[i].y) +
+          vertices[i].x
+    ) {
+      isInside = !isInside;
+    }
+  }
+  return isInside;
 };
