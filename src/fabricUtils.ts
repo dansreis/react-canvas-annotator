@@ -322,11 +322,13 @@ export const anchorWrapper = (
     y: number,
   ) {
     const fabricObject = transform.target;
-    const points = fabricObject.points!;
-    const pathOffset = fabricObject.pathOffset!;
+
+    // Ensure object has points and pathoffset
+    if (!fabricObject.points || !fabricObject.pathOffset) return false;
+
     const point = new fabric.Point(
-      points[anchorIndex].x - pathOffset.x,
-      points[anchorIndex].y - pathOffset.y,
+      fabricObject.points[anchorIndex].x - fabricObject.pathOffset.x,
+      fabricObject.points[anchorIndex].y - fabricObject.pathOffset.y,
     );
     const absolutePoint = fabric.util.transformPoint(
       point,
@@ -335,8 +337,12 @@ export const anchorWrapper = (
     const actionPerformed = fn(eventData, transform, x, y);
     fabricObject._setPositionDimensions?.({}); // TODO: Understand why this needs to be here. Migrate to 'setDimensions'.
     const polygonBaseSize = getObjectSizeWithStroke(fabricObject);
-    const newX = (points[anchorIndex].x - pathOffset.x) / polygonBaseSize.x;
-    const newY = (points[anchorIndex].y - pathOffset.y) / polygonBaseSize.y;
+    const newX =
+      (fabricObject.points[anchorIndex].x - fabricObject.pathOffset.x) /
+      polygonBaseSize.x;
+    const newY =
+      (fabricObject.points[anchorIndex].y - fabricObject.pathOffset.y) /
+      polygonBaseSize.y;
     fabricObject.setPositionByOrigin(absolutePoint, newX + 0.5, newY + 0.5);
     return actionPerformed;
   };
