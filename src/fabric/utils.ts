@@ -2,17 +2,18 @@ import { fabric } from "fabric";
 import * as fabricTypes from "./types";
 import { IPolylineOptions } from "fabric/fabric-impl";
 import CustomControl from "./controls/CustomControl";
+import { DEFAULT_POLYLINE_OPTIONS } from "./const";
 
-export const toPolygon = (object: fabric.Polyline) => {
-  return new fabric.Polygon(object.points!, {
-    name: object.name,
-    fill: object.fill,
-    stroke: object.stroke,
-    strokeWidth: object.strokeWidth,
-    hasBorders: object.hasBorders,
-    hasControls: object.hasControls,
-  });
-};
+// export const toPolygon = (object: fabric.Polyline) => {
+//   return new fabric.Polygon(object.points!, {
+//     name: object.name,
+//     fill: object.fill,
+//     stroke: object.stroke,
+//     strokeWidth: object.strokeWidth,
+//     hasBorders: object.hasBorders,
+//     hasControls: object.hasControls,
+//   });
+// };
 
 /**
  *
@@ -35,48 +36,9 @@ export const findObjectByName = (canvas: fabric.Canvas, name: string) => {
  * @param isPolyline if it should create a the polygon as a  polyline
  * @returns
  */
-export const createPolygon = ({
-  name,
-  points,
-  options,
-  isPolyline = false,
-}: {
-  name: string;
-  points: { x: number; y: number }[];
-  options?: {
-    fill?: string;
-    stroke?: string;
-    strokeWidth?: number;
-    hasBorders?: boolean;
-    hasControls?: boolean;
-  };
-  isPolyline?: boolean;
-}) => {
-  // Merge default options with user input
-  const _options = Object.assign(
-    {
-      fill: "rgba(255,0,0,0.4)",
-      stroke: "red",
-      strokeWidth: 2,
-      hasBorders: false,
-      hasControls: false,
-    },
-    options,
-  );
-  if (isPolyline) {
-    return new fabric.Polyline(points, {
-      name,
-      ..._options,
-    });
-  }
-  return new fabric.Polygon(points, {
-    name,
-    ..._options,
-  });
-};
-
-// TODO: Finish method
-export const createControllableObject = <T = fabric.Polygon | fabric.Polyline>(
+export const createControllableObject = <
+  T extends fabric.Polygon | fabric.Polyline,
+>(
   FabricObj: new (
     points: Array<{ x: number; y: number }>,
     options?: IPolylineOptions,
@@ -84,7 +46,34 @@ export const createControllableObject = <T = fabric.Polygon | fabric.Polyline>(
   points: { x: number; y: number }[],
   options?: IPolylineOptions,
 ) => {
-  return new FabricObj(points, options);
+  const _options: fabric.IPolylineOptions = Object.assign(
+    DEFAULT_POLYLINE_OPTIONS,
+    options,
+  );
+
+  const controllableObject = new FabricObj(points, _options);
+
+  if ((controllableObject.points?.length ?? 0) > 0) {
+    const controls = controllableObject.points?.reduce<{
+      [key: string]: fabric.Control;
+    }>((acc, _point, index) => {
+      acc["p" + index] = new CustomControl(
+        {
+          positionHandler: polygonPositionHandler,
+          actionHandler: anchorWrapper(
+            index > 0 ? index - 1 : controllableObject.points!.length - 1,
+            actionHandler,
+          ),
+          actionName: "modifyPolygon",
+        },
+        index,
+      );
+      return acc;
+    }, {});
+    if (controls && Object.keys(controls).length > 0)
+      controllableObject.controls = controls;
+  }
+  return controllableObject;
 };
 
 /**

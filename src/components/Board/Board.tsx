@@ -4,7 +4,7 @@ import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 import { CanvasObject } from "./types";
 import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
-import CustomControl from "../../fabric/controls/CustomControl";
+import { DEFAULT_POLYLINE_OPTIONS } from "../../fabric/const";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -79,45 +79,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         setDrawingPolygon(!drawingPolygon);
       },
       randomAction1() {
-        const line = new fabric.Polygon(
-          [
-            { x: 40, y: 40 },
-            { x: 120, y: 120 },
-            { x: 160, y: 160 },
-            { x: 260, y: 260 },
-          ],
-          {
-            stroke: "red",
-            fill: undefined,
-            strokeWidth: 1,
-            selectable: true,
-            hasBorders: true,
-            hasControls: true,
-            cornerStyle: "rect",
-            cornerColor: "rgba(113, 113, 117, 0.5)",
-            objectCaching: false,
-          },
-        );
-        const controls = line.points?.reduce<{
-          [key: string]: fabric.Control;
-        }>((acc, _point, index) => {
-          acc["p" + index] = new CustomControl(
-            {
-              positionHandler: fabricUtils.polygonPositionHandler,
-              actionHandler: fabricUtils.anchorWrapper(
-                index > 0 ? index - 1 : line.points!.length - 1,
-                fabricUtils.actionHandler,
-              ),
-              actionName: "modifyPolygon",
-            },
-            index,
-          );
-          return acc;
-        }, {});
-        if (controls) {
-          line.controls = controls;
-        }
-        editor?.canvas.add(line);
+        const poly = fabricUtils.createControllableObject(fabric.Polygon, [
+          { x: 40, y: 40 },
+          { x: 80, y: 40 },
+          { x: 80, y: 80 },
+          { x: 40, y: 80 },
+        ]);
+        editor?.canvas.add(poly);
       },
       randomAction2() {
         console.log("randomAction2");
@@ -232,10 +200,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               this.polygonPoints = [this.lastClickCoords];
             }
 
-            if (this.polygonPoints?.length === 4) {
-              setDrawingPolygon(false);
-              return;
-            }
+            // if (this.polygonPoints?.length === 4) {
+            //   setDrawingPolygon(false);
+            //   return;
+            // }
 
             // Draw the polygon with the existing coords
             // if (this.polygonPoints?.length ?? 0 >= 2) {
@@ -288,10 +256,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             const polygonPoints =
               this.polygonPoints?.concat({ x: pointer.x, y: pointer.y }) ?? [];
 
-            const newPolygon = fabricUtils.createPolygon({
+            const newPolygon = new fabric.Polyline(polygonPoints, {
+              ...DEFAULT_POLYLINE_OPTIONS,
               name: polygonId,
-              points: polygonPoints,
-              isPolyline: true,
+              fill: "rgba(255, 99, 71, 0.2)",
             });
             editor.canvas.add(newPolygon);
           }
