@@ -101,9 +101,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     >({ isDrawing: false, points: [] });
 
     const resetDrawingPolygon = () => {
-      // (canvas as unknown as fabricTypes.CanvasAnnotationState).drawingPolygon =
-      //   state;
-      setDrawingPolygon({ isDrawing: false, points: [] });
+      const state = { isDrawing: false, points: [] };
+      (
+        editor?.canvas as unknown as fabricTypes.CanvasAnnotationState
+      ).drawingPolygon = state;
+      setDrawingPolygon(state);
     };
 
     useEffect(() => {
@@ -186,19 +188,45 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           this.lastClickCoords = lastClickCoords;
 
           if (drawingPolygon.isDrawing) {
-            // Update drawing points of polygon
-            const newPoints = drawingPolygon.points.concat(lastClickCoords);
-            setDrawingPolygon({ ...drawingPolygon, points: newPoints });
+            // Retrive the existing polygon
 
+            const polygon =
+              fabricUtils.findObjectByName<fabricTypes.CustomObject>(
+                editor.canvas,
+                drawingPolygon.id,
+              );
             // Delete previously created polygon (if exists)
-            const polygon = editor.canvas
-              .getObjects()
-              .find((o) => o.name === drawingPolygon.id);
             if (polygon) editor.canvas.remove(polygon);
 
+            const hasClickedOnInitialPoint = (p?: fabricTypes.CustomObject) => {
+              if (p === undefined) return false;
+              // const collisionPoint: string | undefined = undefined;
+              const initialPoint = p.oCoords["p0"];
+
+              if (initialPoint) {
+                const { tl, tr, bl, br } = initialPoint.corner;
+                // We need to ignore the zoom in order to obtain the accurate coordinates
+                const zoomedPointer = editor?.canvas.getPointer(opt.e, true);
+                return fabricUtils.isCoordInsideCoords(zoomedPointer, {
+                  tl,
+                  tr,
+                  bl,
+                  br,
+                });
+              }
+              return false;
+            };
+
+            const isInitialPoint = hasClickedOnInitialPoint(polygon);
+
+            // Update drawing points of polygon
+            const newPoints = isInitialPoint
+              ? drawingPolygon.points
+              : drawingPolygon.points.concat(lastClickCoords);
+
             // Draw a new polygon from scratch
-            const newPolygon = fabricUtils.createControllableObject(
-              fabric.Polyline,
+            const newPolygon = fabricUtils.createControllableCustomObject(
+              isInitialPoint ? fabric.Polygon : fabric.Polyline,
               newPoints,
               {
                 name: drawingPolygon.id,
@@ -206,6 +234,15 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
                 hasBorders: false,
               },
             );
+
+            if (isInitialPoint) {
+              resetDrawingPolygon();
+            } else {
+              setDrawingPolygon({
+                ...drawingPolygon,
+                points: newPoints,
+              });
+            }
 
             // Add object to canvas and set it as ACTIVE
             editor.canvas.add(newPolygon);
@@ -247,13 +284,15 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               y: pointer.y,
             });
 
-            const polygon = editor.canvas
-              .getObjects()
-              .find((o) => o.name === drawingPolygon.id);
+            const polygon = fabricUtils.findObjectByName(
+              editor.canvas,
+              drawingPolygon.id,
+            );
+
             if (polygon) editor.canvas.remove(polygon);
 
             // Draw a new polygon from scratch
-            const newPolygon = fabricUtils.createControllableObject(
+            const newPolygon = fabricUtils.createControllableCustomObject(
               fabric.Polyline,
               newPoints,
               {
@@ -264,28 +303,26 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             );
 
             // Add the object events to check if it stopped drawing
-            newPolygon.on(
-              "mousedown",
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              function (this: fabricTypes.ControllableObjectState, _opt) {
-                const pointer = editor?.canvas.getPointer(opt.e);
-                if (pointer && _opt.target?.oCoords) {
-                  const collisionPoint: string | undefined = undefined;
-                  const initialPoint = this.oCoords["p0"];
-                  const { tl, tr, bl, br } = initialPoint.corner;
-                  console.log(`Pointer: ${pointer}`);
-                  console.log({ tl, tr, bl, br });
-                  const clickedOnInitialPoint = fabricUtils.isCoordInsideCoords(
-                    pointer,
-                    { tl, tr, bl, br },
-                  );
+            // newPolygon.on(
+            //   "mousedown",
+            //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            //   function (this: fabricTypes.ControllableObjectState, _opt) {
+            //     const pointer = editor?.canvas.getPointer(_opt.e);
+            //     if (pointer && _opt.target?.oCoords) {
+            //       const collisionPoint: string | undefined = undefined;
+            //       const initialPoint = this.oCoords["p0"];
+            //       const { tl, tr, bl, br } = initialPoint.corner;
+            //       const clickedOnInitialPoint = fabricUtils.isCoordInsideCoords(
+            //         pointer,
+            //         { tl, tr, bl, br },
+            //       );
 
-                  if (clickedOnInitialPoint) {
-                    console.log("inside_coords", pointer, collisionPoint);
-                  }
-                }
-              },
-            );
+            //       if (clickedOnInitialPoint) {
+            //         console.log("inside_coords", pointer, collisionPoint);
+            //       }
+            //     }
+            //   },
+            // );
 
             // Add object to canvas and set it as ACTIVE
             editor.canvas.add(newPolygon);

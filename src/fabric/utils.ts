@@ -12,20 +12,23 @@ import { DEFAULT_POLYLINE_OPTIONS } from "./const";
  * @param name object identifier
  * @returns
  */
-export const findObjectByName = (canvas: fabric.Canvas, name: string) => {
-  return canvas.getObjects().find((o) => o.name === name);
+export const findObjectByName = <T extends fabric.Object>(
+  canvas: fabric.Canvas,
+  name?: string,
+): T | undefined => {
+  if (name === undefined) return undefined;
+  const obj = canvas.getObjects().find((o) => o.name === name);
+  return obj as T | undefined;
 };
 
 // TODO: Maybe remove this 'createPolygon' from here. Replace with 'createRect'.
 /**
  *
- * @param name name of the object
  * @param points array of points to create the polygon
  * @param options options of the polygon (fill, stroke, controls..)
- * @param isPolyline if it should create a the polygon as a  polyline
  * @returns
  */
-export const createControllableObject = <
+export const createControllableCustomObject = <
   T extends fabric.Polygon | fabric.Polyline,
 >(
   FabricObj: new (
@@ -41,7 +44,6 @@ export const createControllableObject = <
   );
 
   const controllableObject = new FabricObj(points, _options);
-
   if ((controllableObject.points?.length ?? 0) > 0) {
     const controls = controllableObject.points?.reduce<{
       [key: string]: CustomControl;
@@ -62,7 +64,7 @@ export const createControllableObject = <
     if (controls && Object.keys(controls).length > 0)
       controllableObject.controls = controls;
   }
-  return controllableObject;
+  return controllableObject as unknown as fabricTypes.CustomObject; // TODO: Maybe we can do this in a better way
 };
 
 /**
