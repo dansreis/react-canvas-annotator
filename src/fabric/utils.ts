@@ -4,17 +4,6 @@ import { IPolylineOptions } from "fabric/fabric-impl";
 import CustomControl from "./controls/CustomControl";
 import { DEFAULT_POLYLINE_OPTIONS } from "./const";
 
-// export const toPolygon = (object: fabric.Polyline) => {
-//   return new fabric.Polygon(object.points!, {
-//     name: object.name,
-//     fill: object.fill,
-//     stroke: object.stroke,
-//     strokeWidth: object.strokeWidth,
-//     hasBorders: object.hasBorders,
-//     hasControls: object.hasControls,
-//   });
-// };
-
 /**
  *
  * Finds an object in a canvas according to its name
@@ -203,19 +192,20 @@ export const anchorWrapper = (
 
 export const isCoordInsideCoords = (
   point: { x: number; y: number },
-  vertices: { x: number; y: number }[],
+  vertices: {
+    tl: { x: number; y: number };
+    tr: { x: number; y: number };
+    bl: { x: number; y: number };
+    br: { x: number; y: number };
+  },
 ) => {
+  const { tl, tr, bl } = vertices;
   let isInside = false;
-  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
-    if (
-      vertices[i].y > point.y !== vertices[j].y > point.y &&
-      point.x <
-        ((vertices[j].x - vertices[i].x) * (point.y - vertices[i].y)) /
-          (vertices[j].y - vertices[i].y) +
-          vertices[i].x
-    ) {
-      isInside = !isInside;
-    }
+
+  // Check if the point is inside the rectangle formed by the vertices
+  if (point.x > tl.x && point.x < tr.x && point.y > tl.y && point.y < bl.y) {
+    isInside = true;
   }
+
   return isInside;
 };

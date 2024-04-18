@@ -29,12 +29,6 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         <button onClick={() => ref.current?.downloadImage()}>
           Download Image
         </button>
-        <button onClick={() => ref.current?.randomAction1()}>
-          RandomAction (1)
-        </button>
-        <button onClick={() => ref.current?.randomAction2()}>
-          RandomAction (2)
-        </button>
       </div>
       <div style={{ display: "flex", gap: "10px" }}>
         <div

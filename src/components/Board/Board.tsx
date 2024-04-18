@@ -33,8 +33,6 @@ export type BoardActions = {
   deleteSelectedObjects: () => void;
   downloadImage: () => void;
   drawPolygon: () => void;
-  randomAction1: () => void;
-  randomAction2: () => void;
 };
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
@@ -72,20 +70,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           const polygonId = uuidv4();
           setDrawingPolygon({ id: polygonId, isDrawing: true, points: [] });
         } else {
-          setDrawingPolygon({ isDrawing: false, points: [] });
+          resetDrawingPolygon();
         }
-      },
-      randomAction1() {
-        const poly = fabricUtils.createControllableObject(fabric.Polygon, [
-          { x: 40, y: 40 },
-          { x: 80, y: 40 },
-          { x: 80, y: 80 },
-          { x: 40, y: 80 },
-        ]);
-        editor?.canvas.add(poly);
-      },
-      randomAction2() {
-        console.log("randomAction2");
       },
       downloadImage() {
         fabricActions.canvasImageDownload(image);
@@ -113,6 +99,12 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     const [drawingPolygon, setDrawingPolygon] = useState<
       NonNullable<fabricTypes.CanvasAnnotationState["drawingPolygon"]>
     >({ isDrawing: false, points: [] });
+
+    const resetDrawingPolygon = () => {
+      // (canvas as unknown as fabricTypes.CanvasAnnotationState).drawingPolygon =
+      //   state;
+      setDrawingPolygon({ isDrawing: false, points: [] });
+    };
 
     useEffect(() => {
       const parentCanvasElement = document.getElementById(
@@ -211,7 +203,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               {
                 name: drawingPolygon.id,
                 fill: "rgba(255, 99, 71, 0.2)",
-                hasBorders: true,
+                hasBorders: false,
               },
             );
 
@@ -219,21 +211,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             editor.canvas.add(newPolygon);
             editor.canvas.setActiveObject(newPolygon);
           }
-
-          // if (previousPolygon) editor.canvas.setActiveObject(previousPolygon);
-
-          // if (drawingPolygon.isDrawing) {
-          //   console.log("isDrawingPolygon");
-          //   // TODO: Temporary polygon create
-          // } else {
-          //   console.log("isNotDrawingPolygon");
-          // }
-
-          //   // console.log(previousPolygon);
-          //   // if (previousPolygon) {
-          //   //   console.log(`Polygon already exists! ID: ${polygonId}`);
-          //   //   editor.canvas.remove(previousPolygon);
-          //   // }
         },
       );
 
@@ -263,7 +240,57 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             }
           }
 
-          // console.log(this.drawingPolygon?.id);
+          if (this.drawingPolygon?.isDrawing) {
+            const pointer = editor?.canvas.getPointer(opt.e);
+            const newPoints = drawingPolygon.points.concat({
+              x: pointer.x,
+              y: pointer.y,
+            });
+
+            const polygon = editor.canvas
+              .getObjects()
+              .find((o) => o.name === drawingPolygon.id);
+            if (polygon) editor.canvas.remove(polygon);
+
+            // Draw a new polygon from scratch
+            const newPolygon = fabricUtils.createControllableObject(
+              fabric.Polyline,
+              newPoints,
+              {
+                name: drawingPolygon.id,
+                fill: "rgba(255, 99, 71, 0.2)",
+                hasBorders: false,
+              },
+            );
+
+            // Add the object events to check if it stopped drawing
+            newPolygon.on(
+              "mousedown",
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              function (this: fabricTypes.ControllableObjectState, _opt) {
+                const pointer = editor?.canvas.getPointer(opt.e);
+                if (pointer && _opt.target?.oCoords) {
+                  const collisionPoint: string | undefined = undefined;
+                  const initialPoint = this.oCoords["p0"];
+                  const { tl, tr, bl, br } = initialPoint.corner;
+                  console.log(`Pointer: ${pointer}`);
+                  console.log({ tl, tr, bl, br });
+                  const clickedOnInitialPoint = fabricUtils.isCoordInsideCoords(
+                    pointer,
+                    { tl, tr, bl, br },
+                  );
+
+                  if (clickedOnInitialPoint) {
+                    console.log("inside_coords", pointer, collisionPoint);
+                  }
+                }
+              },
+            );
+
+            // Add object to canvas and set it as ACTIVE
+            editor.canvas.add(newPolygon);
+            editor.canvas.setActiveObject(newPolygon);
+          }
 
           // // Add the object events
           // newPolygon.on(
