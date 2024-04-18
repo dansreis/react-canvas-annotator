@@ -91,10 +91,15 @@ export const polygonPositionHandler = function (
     fabricObject!.points![this!.pointIndex!].x - fabricObject.pathOffset.x;
   const y =
     fabricObject!.points![this!.pointIndex!].y - fabricObject.pathOffset.y;
+
+  // Ignore transformation if object doesn't exist
+  if (!fabricObject?.canvas?.viewportTransform) {
+    return new fabric.Point(0, 0);
+  }
   return fabric.util.transformPoint(
     new fabric.Point(x, y),
     fabric.util.multiplyTransformMatrices(
-      fabricObject!.canvas!.viewportTransform!,
+      fabricObject.canvas.viewportTransform,
       fabricObject.calcTransformMatrix(),
     ),
   );

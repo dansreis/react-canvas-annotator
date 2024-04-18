@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { fabric } from "fabric";
+import { v4 as uuidv4 } from "uuid";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 import { CanvasObject } from "./types";
 import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
+import * as fabricTypes from "../../fabric/types";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -33,31 +35,6 @@ export type BoardActions = {
   drawPolygon: () => void;
   randomAction1: () => void;
   randomAction2: () => void;
-};
-
-type CanvasAnnotationState = {
-  selection?: boolean;
-  lastPosX: number;
-  lastPosY: number;
-  isDragging?: boolean;
-  drawingPolygon?: boolean;
-  lastClickCoords?: { x: number; y: number };
-  polygonPoints?: { x: number; y: number }[];
-};
-
-type ControllableObjectState = {
-  oCoords: {
-    [key: string]: {
-      x: number;
-      y: number;
-      corner: {
-        tl: fabric.Point;
-        tr: fabric.Point;
-        bl: fabric.Point;
-        br: fabric.Point;
-      };
-    };
-  };
 };
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
@@ -90,7 +67,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         if (canvas) fabricActions.deleteSelected(canvas);
       },
       drawPolygon() {
-        setDrawingPolygon(!drawingPolygon);
+        const isDrawing = !drawingPolygon?.isDrawing;
+        if (isDrawing) {
+          const polygonId = uuidv4();
+          setDrawingPolygon({ id: polygonId, isDrawing: true, points: [] });
+        } else {
+          setDrawingPolygon({ isDrawing: false, points: [] });
+        }
       },
       randomAction1() {
         const poly = fabricUtils.createControllableObject(fabric.Polygon, [
@@ -110,8 +93,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     }));
     const { editor, onReady } = useFabricJSEditor();
 
-    const [drawingPolygon, setDrawingPolygon] = useState(false);
-
     const [currentZoom, setCurrentZoom] = useState<number>(
       initialStatus?.currentZoom || 100,
     );
@@ -128,6 +109,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     const [draggingEnabled, setDraggingEnabled] = useState(
       initialStatus?.draggingEnabled || false,
     );
+
+    const [drawingPolygon, setDrawingPolygon] = useState<
+      NonNullable<fabricTypes.CanvasAnnotationState["drawingPolygon"]>
+    >({ isDrawing: false, points: [] });
 
     useEffect(() => {
       const parentCanvasElement = document.getElementById(
@@ -172,10 +157,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         { selectable: false },
       );
 
+      // On Wheel interation/move
       editor.canvas.on(
         "mouse:wheel",
-        function (this: CanvasAnnotationState, opt) {
-          if (this.drawingPolygon) return;
+        function (this: fabricTypes.CanvasAnnotationState, opt) {
+          if (this.drawingPolygon?.isDrawing) return;
           const delta = opt.e.deltaY;
           let zoom = editor.canvas.getZoom();
           zoom *= 0.999 ** delta;
@@ -191,9 +177,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         },
       );
 
+      // On Mouse right click (down)
       editor.canvas.on(
         "mouse:down",
-        function (this: CanvasAnnotationState, opt) {
+        function (this: fabricTypes.CanvasAnnotationState, opt) {
           const evt = opt.e;
           this.isDragging = draggingEnabled;
           this.selection = false;
@@ -206,42 +193,64 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           const lastClickCoords = { x: pointer.x, y: pointer.y };
           this.lastClickCoords = lastClickCoords;
 
-          // Add all polygon points to be later drawn
-          if (drawingPolygon) {
-            if (this.polygonPoints) {
-              this.polygonPoints?.push(this.lastClickCoords);
-            } else {
-              this.polygonPoints = [this.lastClickCoords];
-            }
+          if (drawingPolygon.isDrawing) {
+            // Update drawing points of polygon
+            const newPoints = drawingPolygon.points.concat(lastClickCoords);
+            setDrawingPolygon({ ...drawingPolygon, points: newPoints });
 
-            // if (this.polygonPoints?.length === 4) {
-            //   setDrawingPolygon(false);
-            //   return;
-            // }
+            // Delete previously created polygon (if exists)
+            const polygon = editor.canvas
+              .getObjects()
+              .find((o) => o.name === drawingPolygon.id);
+            if (polygon) editor.canvas.remove(polygon);
 
-            // Draw the polygon with the existing coords
-            // if (this.polygonPoints?.length ?? 0 >= 2) {
-            //   const polygonId = "polygonId";
-            //   const previousPolygon = editor.canvas
-            //     .getObjects()
-            //     .find((o) => o.name === polygonId);
+            // Draw a new polygon from scratch
+            const newPolygon = fabricUtils.createControllableObject(
+              fabric.Polyline,
+              newPoints,
+              {
+                name: drawingPolygon.id,
+                fill: "rgba(255, 99, 71, 0.2)",
+                hasBorders: true,
+              },
+            );
 
-            //   if (previousPolygon) editor.canvas.remove(previousPolygon);
-            //   const newPolygon = new fabric.Polygon(this.polygonPoints ?? [], {
-            //     name: polygonId,
-            //     fill: undefined,
-            //     stroke: "red",
-            //     strokeWidth: 2,
-            //   });
-            //   editor.canvas.add(newPolygon);
-            // }
+            // Add object to canvas and set it as ACTIVE
+            editor.canvas.add(newPolygon);
+            editor.canvas.setActiveObject(newPolygon);
           }
+
+          // if (previousPolygon) editor.canvas.setActiveObject(previousPolygon);
+
+          // if (drawingPolygon.isDrawing) {
+          //   console.log("isDrawingPolygon");
+          //   // TODO: Temporary polygon create
+          // } else {
+          //   console.log("isNotDrawingPolygon");
+          // }
+
+          //   // console.log(previousPolygon);
+          //   // if (previousPolygon) {
+          //   //   console.log(`Polygon already exists! ID: ${polygonId}`);
+          //   //   editor.canvas.remove(previousPolygon);
+          //   // }
         },
       );
 
+      // On Mouse right click (up)
+      editor.canvas.on(
+        "mouse:up",
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        function (this: fabricTypes.CanvasAnnotationState, _opt) {
+          this.isDragging = false;
+          this.selection = true;
+        },
+      );
+
+      // On Mouse free moving on canvas
       editor.canvas.on(
         "mouse:move",
-        function (this: CanvasAnnotationState, opt) {
+        function (this: fabricTypes.CanvasAnnotationState, opt) {
           if (this.isDragging) {
             const e = opt.e;
             const vpt = editor.canvas.viewportTransform;
@@ -252,92 +261,81 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               this.lastPosX = e.clientX;
               this.lastPosY = e.clientY;
             }
-          } else if (this.drawingPolygon) {
-            const pointer = editor?.canvas.getPointer(opt.e);
-
-            const polygonId = "polygonId";
-            const previousPolygon = fabricUtils.findObjectByName(
-              editor.canvas,
-              polygonId,
-            );
-
-            if (previousPolygon)
-              fabricActions.deleteObject(editor.canvas, previousPolygon);
-
-            // Polygon "clicked" points with the cursor current pointer
-            const polygonPoints =
-              this.polygonPoints?.concat({ x: pointer.x, y: pointer.y }) ?? [];
-
-            // const newPolygon = new fabric.Polyline(polygonPoints, {
-            //   name: polygonId,
-            //   fill: "rgba(255, 99, 71, 0.2)",
-            //   stroke: "red",
-            //   strokeWidth: 1,
-            //   selectable: true,
-            //   hasBorders: true,
-            //   hasControls: true,
-            //   cornerStyle: "rect",
-            //   cornerColor: "rgba(113, 113, 117, 0.5)",
-            //   objectCaching: false,
-            // });
-
-            const newPolygon = fabricUtils.createControllableObject(
-              fabric.Polyline,
-              polygonPoints,
-              {
-                name: polygonId,
-                fill: "rgba(255, 99, 71, 0.2)",
-                hasBorders: false,
-              },
-            );
-
-            newPolygon.on(
-              "mousedown",
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              function (this: ControllableObjectState, _opt) {
-                const pointer = editor?.canvas.getPointer(opt.e);
-                if (pointer && _opt.target?.oCoords) {
-                  let isInside = false;
-                  let collisionPoint: string | undefined = undefined;
-                  for (const pointKey in this.oCoords) {
-                    const { tl, tr, bl, br } = this.oCoords[pointKey].corner;
-                    const clickedOnCorner = fabricUtils.isCoordInsideCoords(
-                      pointer,
-                      [tl, tr, bl, br],
-                    );
-                    if (clickedOnCorner) {
-                      isInside = true;
-                      collisionPoint = pointKey;
-                      break;
-                    }
-                  }
-                  if (isInside) {
-                    console.log("inside_coords", pointer, collisionPoint);
-                    setDrawingPolygon(false);
-                  }
-                }
-              },
-            );
-            // newPolygon.on(
-            //   "mousemove",
-            //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            //   function (this: ControllableObjectState, _opt) {
-            //     console.log("MOVING!!");
-            //   },
-            // );
-            // newPolygon.setControlVisible("mtr", false);
-            editor.canvas.add(newPolygon);
-            editor.canvas.setActiveObject(newPolygon);
           }
-        },
-      );
 
-      editor.canvas.on(
-        "mouse:up",
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        function (this: CanvasAnnotationState, _opt) {
-          this.isDragging = false;
-          this.selection = true;
+          // console.log(this.drawingPolygon?.id);
+
+          // // Add the object events
+          // newPolygon.on(
+          //   "mousedown",
+          //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          //   function (this: fabricTypes.ControllableObjectState, _opt) {
+          //     const pointer = editor?.canvas.getPointer(opt.e);
+          //     if (pointer && _opt.target?.oCoords) {
+          //       let isInside = false;
+          //       let collisionPoint: string | undefined = undefined;
+          //       for (const pointKey in this.oCoords) {
+          //         const { tl, tr, bl, br } = this.oCoords[pointKey].corner;
+          //         const clickedOnCorner = fabricUtils.isCoordInsideCoords(
+          //           pointer,
+          //           [tl, tr, bl, br],
+          //         );
+          //         if (clickedOnCorner) {
+          //           isInside = true;
+          //           collisionPoint = pointKey;
+          //           break;
+          //         }
+          //       }
+          //       if (isInside) {
+          //         console.log("inside_coords", pointer, collisionPoint);
+          //       }
+          //     }
+          //   },
+          // );
+
+          // if (this.drawingPolygon) {
+          //   const pointer = editor?.canvas.getPointer(opt.e);
+
+          //   const polygonId = "polygonId";
+          //   const previousPolygon = fabricUtils.findObjectByName(
+          //     editor.canvas,
+          //     polygonId,
+          //   );
+
+          //   if (previousPolygon)
+          //     fabricActions.deleteObject(editor.canvas, previousPolygon);
+
+          //   // Polygon "clicked" points with the cursor current pointer
+          //   const polygonPoints =
+          //     this.polygonPoints?.concat({ x: pointer.x, y: pointer.y }) ?? [];
+
+          //   // const newPolygon = new fabric.Polyline(polygonPoints, {
+          //   //   name: polygonId,
+          //   //   fill: "rgba(255, 99, 71, 0.2)",
+          //   //   stroke: "red",
+          //   //   strokeWidth: 1,
+          //   //   selectable: true,
+          //   //   hasBorders: true,
+          //   //   hasControls: true,
+          //   //   cornerStyle: "rect",
+          //   //   cornerColor: "rgba(113, 113, 117, 0.5)",
+          //   //   objectCaching: false,
+          //   // });
+
+          //   const newPolygon = fabricUtils.createControllableObject(
+          //     fabric.Polyline,
+          //     polygonPoints,
+          //     {
+          //       name: polygonId,
+          //       fill: "rgba(255, 99, 71, 0.2)",
+          //       hasBorders: false,
+          //     },
+          //   );
+
+          //   // newPolygon.setControlVisible("mtr", false);
+          //   editor.canvas.add(newPolygon);
+          //   editor.canvas.setActiveObject(newPolygon);
+          // }
         },
       );
 
@@ -345,28 +343,18 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "selection:created",
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        function (this: CanvasAnnotationState, _opt) {
+        function (this: fabricTypes.CanvasAnnotationState, _opt) {
           // console.log("SELECTED! ", opt.selected?.[0]);
         },
       );
 
-      // editor.canvas.on("mouse:over", function (this: CanvasAnnotationState, opt) {
-      //   opt.target?.set("fill", "green");
-      //   editor.canvas.renderAll();
-
-      //   opt.e.preventDefault();
-      //   opt.e.stopPropagation();
-      // });
-
-      // editor.canvas.on("mouse:out", function (this: CanvasAnnotationState, opt) {
-      //   opt.target?.set("fill", "rgba(255,127,39,1)");
-      //   editor.canvas.renderAll();
-
-      //   opt.e.preventDefault();
-      //   opt.e.stopPropagation();
-      // });
-
       editor.canvas.renderAll();
+
+      // TODO: Need to verify this
+      // Clear all canvas events when the status changes.
+      return () => {
+        editor.canvas.off();
+      };
     }, [
       draggingEnabled,
       editor,

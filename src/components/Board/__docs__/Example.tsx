@@ -5,6 +5,7 @@ const Example: FC<BoardProps> = ({ items, image }) => {
   const ref = React.createRef<BoardActions>();
 
   const [toggleStatus, setToggleStatus] = useState(false);
+  const [isDrawingPolygon, setIsDrawingPolygon] = useState(false);
   const [currentZoom, setCurrentZoom] = useState<number | undefined>();
 
   return (
@@ -17,7 +18,14 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         <button onClick={() => ref.current?.deleteSelectedObjects()}>
           Delete Selected
         </button>
-        <button onClick={() => ref.current?.drawPolygon()}>Draw Polygon</button>
+        <button
+          onClick={() => {
+            ref.current?.drawPolygon();
+            setIsDrawingPolygon(!isDrawingPolygon);
+          }}
+        >
+          Draw Polygon [{isDrawingPolygon ? "ON" : "OFF"}]
+        </button>
         <button onClick={() => ref.current?.downloadImage()}>
           Download Image
         </button>
