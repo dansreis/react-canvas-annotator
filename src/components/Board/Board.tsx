@@ -33,6 +33,7 @@ export type BoardActions = {
   deleteSelectedObjects: () => void;
   downloadImage: () => void;
   drawPolygon: () => void;
+  retrieveObjects: () => CanvasObject[];
 };
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
@@ -75,6 +76,48 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       },
       downloadImage() {
         fabricActions.canvasImageDownload(image);
+      },
+      retrieveObjects: () => {
+        const canvas = editor?.canvas;
+        if (canvas) {
+          // const toOriginalCoord = (
+          //   scaledCoord: fabric.Point,
+          //   imageSize: { width: number; height: number },
+          //   scaleRatio: number,
+          // ) => {
+          //   const height = canvas.getHeight() ?? 1;
+          //   const width = canvas.getWidth() ?? 1;
+
+          //   const unscaledX =
+          //     (scaledCoord.x - width / 2 + (imageSize.width * scaleRatio) / 2) /
+          //     scaleRatio;
+          //   const unscaledY =
+          //     (scaledCoord.y -
+          //       height / 2 +
+          //       (imageSize.height * scaleRatio) / 2) /
+          //     scaleRatio;
+
+          //   return { x: unscaledX, y: unscaledY };
+          // };
+
+          const customObjects =
+            fabricUtils.retrieveObjects<fabricTypes.CustomObject>(canvas);
+          if (!customObjects) return [];
+          return customObjects.map((co) => {
+            return {
+              id: co.name!,
+              category: "TODO_category",
+              color: "TODO_color",
+              value: "TODO_value",
+              coords: co.points ?? [],
+              // coords:
+              //   co.points?.map((p) =>
+              //     toOriginalCoord(p, imageSize, scaleRatio),
+              //   ) ?? [],
+            };
+          });
+        }
+        return [];
       },
     }));
     const { editor, onReady } = useFabricJSEditor();
@@ -356,50 +399,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           //     }
           //   },
           // );
-
-          // if (this.drawingPolygon) {
-          //   const pointer = editor?.canvas.getPointer(opt.e);
-
-          //   const polygonId = "polygonId";
-          //   const previousPolygon = fabricUtils.findObjectByName(
-          //     editor.canvas,
-          //     polygonId,
-          //   );
-
-          //   if (previousPolygon)
-          //     fabricActions.deleteObject(editor.canvas, previousPolygon);
-
-          //   // Polygon "clicked" points with the cursor current pointer
-          //   const polygonPoints =
-          //     this.polygonPoints?.concat({ x: pointer.x, y: pointer.y }) ?? [];
-
-          //   // const newPolygon = new fabric.Polyline(polygonPoints, {
-          //   //   name: polygonId,
-          //   //   fill: "rgba(255, 99, 71, 0.2)",
-          //   //   stroke: "red",
-          //   //   strokeWidth: 1,
-          //   //   selectable: true,
-          //   //   hasBorders: true,
-          //   //   hasControls: true,
-          //   //   cornerStyle: "rect",
-          //   //   cornerColor: "rgba(113, 113, 117, 0.5)",
-          //   //   objectCaching: false,
-          //   // });
-
-          //   const newPolygon = fabricUtils.createControllableObject(
-          //     fabric.Polyline,
-          //     polygonPoints,
-          //     {
-          //       name: polygonId,
-          //       fill: "rgba(255, 99, 71, 0.2)",
-          //       hasBorders: false,
-          //     },
-          //   );
-
-          //   // newPolygon.setControlVisible("mtr", false);
-          //   editor.canvas.add(newPolygon);
-          //   editor.canvas.setActiveObject(newPolygon);
-          // }
         },
       );
 
@@ -409,6 +408,27 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         function (this: fabricTypes.CanvasAnnotationState, _opt) {
           // console.log("SELECTED! ", opt.selected?.[0]);
+        },
+      );
+
+      // Objects Moving
+      editor.canvas.on(
+        "object:modified",
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        function (this: fabricTypes.CanvasAnnotationState, _opt) {
+          console.log("Object Modified Event");
+          const obj = _opt.target as fabricTypes.CustomObject | undefined;
+          if (obj) {
+            // Update object internal points
+            obj.points = obj.points?.map((p) => {
+              const matrix = obj.calcOwnMatrix();
+              const tmpPoint = new fabric.Point(
+                p.x - obj.pathOffset!.x,
+                p.y - obj.pathOffset!.y,
+              );
+              return fabric.util.transformPoint(tmpPoint, matrix);
+            });
+          }
         },
       );
 
@@ -455,6 +475,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       fabricActions.deleteAll(editor?.canvas);
 
       for (const item of items) {
+        //TODO: Use fabricUtils.createControllableCustomObject()
         const polygon = new fabric.Polygon(item.coords.map(toScaledCoord), {
           name: `ID_${item.id}`,
           fill: undefined,

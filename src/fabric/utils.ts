@@ -6,6 +6,20 @@ import { DEFAULT_POLYLINE_OPTIONS } from "./const";
 
 /**
  *
+ * Retrieves all available objects in canvas
+ *
+ * @param canvas html canvas to look for the object
+ * @returns
+ */
+export const retrieveObjects = <T extends fabric.Object>(
+  canvas: fabric.Canvas,
+) => {
+  const obj = canvas.getObjects();
+  return obj as T[] | undefined;
+};
+
+/**
+ *
  * Finds an object in a canvas according to its name
  *
  * @param canvas html canvas to look for the object
@@ -21,7 +35,6 @@ export const findObjectByName = <T extends fabric.Object>(
   return obj as T | undefined;
 };
 
-// TODO: Maybe remove this 'createPolygon' from here. Replace with 'createRect'.
 /**
  *
  * @param points array of points to create the polygon
