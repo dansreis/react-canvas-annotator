@@ -6,6 +6,99 @@ import { DEFAULT_POLYLINE_OPTIONS } from "./const";
 
 /**
  *
+ * Transforms a coordinate into the original coordinate from input
+ *
+ * @param cInfo canvas width and height
+ * @param iInfo image width and height
+ * @param coord coord to transform
+ * @param scaleRatio current zoom/scale
+ * @returns
+ */
+export const toOriginalCoord = ({
+  cInfo,
+  iInfo,
+  coord,
+  scaleRatio,
+}: {
+  cInfo: {
+    width: number;
+    height: number;
+  };
+  iInfo: {
+    width: number;
+    height: number;
+  };
+  coord: fabric.Point;
+  scaleRatio: number;
+}) => {
+  const unscaledX =
+    (coord.x - cInfo.width / 2 + (iInfo.width * scaleRatio) / 2) / scaleRatio;
+  const unscaledY =
+    (coord.y - cInfo.height / 2 + (iInfo.height * scaleRatio) / 2) / scaleRatio;
+
+  return { x: unscaledX, y: unscaledY };
+};
+
+/**
+ *
+ * Transforms a coordinate into a canvas-scaled coordinate, making it compatible for use within the canvas.
+ *
+ * @param cInfo canvas width and height
+ * @param iInfo image width and height
+ * @param coord coord to transform
+ * @param scaleRatio current zoom/scale
+ * @returns
+ */
+export const toScaledCoord = ({
+  cInfo,
+  iInfo,
+  coord,
+  scaleRatio,
+}: {
+  cInfo: {
+    width: number;
+    height: number;
+  };
+  iInfo: {
+    width: number;
+    height: number;
+  };
+  coord: { x: number; y: number };
+  scaleRatio: number;
+}) => {
+  const x =
+    cInfo.width / 2 - (iInfo.width * scaleRatio) / 2 + coord.x * scaleRatio;
+  const y =
+    cInfo.height / 2 - (iInfo.height * scaleRatio) / 2 + coord.y * scaleRatio;
+
+  return { x, y };
+};
+
+/**
+ *
+ * Retrieves an object points in the canvas
+ *
+ * @param obj custom object
+ * @returns
+ */
+export const pointsInCanvas = (obj?: fabricTypes.CustomObject) => {
+  if (!obj) return [];
+  return (
+    obj.points?.map((p) => {
+      const matrix = obj.calcOwnMatrix();
+      const minX = Math.min(...obj.points!.map((_p) => _p.x));
+      const minY = Math.min(...obj.points!.map((_p) => _p.y));
+      const tmpPoint = new fabric.Point(
+        p.x - minX - obj.width! / 2,
+        p.y - minY - obj.height! / 2,
+      );
+      return fabric.util.transformPoint(tmpPoint, matrix);
+    }) ?? []
+  );
+};
+
+/**
+ *
  * Retrieves all available objects in canvas
  *
  * @param canvas html canvas to look for the object
@@ -98,6 +191,7 @@ export const polygonPositionHandler = function (
 
   // Ignore transformation if object doesn't exist
   if (!fabricObject?.canvas?.viewportTransform) {
+    console.log(`Ignore the transformation! [objectId: ${fabricObject.name}]`);
     return new fabric.Point(0, 0);
   }
   return fabric.util.transformPoint(

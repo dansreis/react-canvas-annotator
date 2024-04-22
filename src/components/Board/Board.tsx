@@ -80,40 +80,28 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       retrieveObjects: () => {
         const canvas = editor?.canvas;
         if (canvas) {
-          // const toOriginalCoord = (
-          //   scaledCoord: fabric.Point,
-          //   imageSize: { width: number; height: number },
-          //   scaleRatio: number,
-          // ) => {
-          //   const height = canvas.getHeight() ?? 1;
-          //   const width = canvas.getWidth() ?? 1;
-
-          //   const unscaledX =
-          //     (scaledCoord.x - width / 2 + (imageSize.width * scaleRatio) / 2) /
-          //     scaleRatio;
-          //   const unscaledY =
-          //     (scaledCoord.y -
-          //       height / 2 +
-          //       (imageSize.height * scaleRatio) / 2) /
-          //     scaleRatio;
-
-          //   return { x: unscaledX, y: unscaledY };
-          // };
-
           const customObjects =
             fabricUtils.retrieveObjects<fabricTypes.CustomObject>(canvas);
           if (!customObjects) return [];
           return customObjects.map((co) => {
+            const updatedCoordPoints = fabricUtils.pointsInCanvas(co);
+            const updatedCoords = updatedCoordPoints.map((p) =>
+              fabricUtils.toOriginalCoord({
+                cInfo: {
+                  width: canvas.getWidth(),
+                  height: canvas.getHeight(),
+                },
+                iInfo: imageSize,
+                coord: p,
+                scaleRatio,
+              }),
+            );
             return {
               id: co.name!,
               category: "TODO_category",
               color: "TODO_color",
               value: "TODO_value",
-              coords: co.points ?? [],
-              // coords:
-              //   co.points?.map((p) =>
-              //     toOriginalCoord(p, imageSize, scaleRatio),
-              //   ) ?? [],
+              coords: updatedCoords,
             };
           });
         }
@@ -416,18 +404,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         "object:modified",
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         function (this: fabricTypes.CanvasAnnotationState, _opt) {
-          console.log("Object Modified Event");
           const obj = _opt.target as fabricTypes.CustomObject | undefined;
           if (obj) {
-            // Update object internal points
-            obj.points = obj.points?.map((p) => {
-              const matrix = obj.calcOwnMatrix();
-              const tmpPoint = new fabric.Point(
-                p.x - obj.pathOffset!.x,
-                p.y - obj.pathOffset!.y,
-              );
-              return fabric.util.transformPoint(tmpPoint, matrix);
-            });
+            console.log(`Object ["${obj.name}"] modified event`);
           }
         },
       );
@@ -455,19 +434,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
     // Load Initial items
     useEffect(() => {
-      const toScaledCoord = (coord: { x: number; y: number }) => {
-        const height = editor?.canvas.getHeight() ?? 1;
-        const width = editor?.canvas.getWidth() ?? 1;
-        const x =
-          width / 2 - (imageSize.width * scaleRatio) / 2 + coord.x * scaleRatio;
-        const y =
-          height / 2 -
-          (imageSize.height * scaleRatio) / 2 +
-          coord.y * scaleRatio;
-
-        return { x, y };
-      };
-
       const canvas = editor?.canvas;
       if (!canvas) return;
 
@@ -476,7 +442,18 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
       for (const item of items) {
         //TODO: Use fabricUtils.createControllableCustomObject()
-        const polygon = new fabric.Polygon(item.coords.map(toScaledCoord), {
+        const scaledCoords = item.coords.map((p) =>
+          fabricUtils.toScaledCoord({
+            cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
+            iInfo: {
+              width: imageSize.width,
+              height: imageSize.height,
+            },
+            coord: p,
+            scaleRatio,
+          }),
+        );
+        const polygon = new fabric.Polygon(scaledCoords, {
           name: `ID_${item.id}`,
           fill: undefined,
           stroke: "red",
@@ -484,7 +461,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         });
         canvas.add(polygon);
       }
-    }, [editor?.canvas, imageSize.height, imageSize.width, items, scaleRatio]);
+    }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);
 
     //   const renderIcon = (
     //     ctx: CanvasRenderingContext2D,

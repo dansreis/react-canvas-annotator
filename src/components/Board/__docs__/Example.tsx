@@ -31,8 +31,8 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         </button>
         <button
           onClick={() => {
-            const objs = ref.current?.retrieveObjects();
-            console.log(objs?.[0]);
+            const asd = ref.current?.retrieveObjects();
+            console.log(asd);
           }}
         >
           Retrieve Objects

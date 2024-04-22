@@ -5,7 +5,7 @@ export const DEFAULT_POLYLINE_OPTIONS: fabric.IPolylineOptions = {
   selectable: true,
   hasBorders: true,
   hasControls: true,
-  cornerStyle: "rect",
+  cornerStyle: "circle",
   cornerColor: "rgba(113, 113, 117, 0.5)",
   objectCaching: false,
 };
