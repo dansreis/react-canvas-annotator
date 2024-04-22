@@ -6,6 +6,7 @@ const Example: FC<BoardProps> = ({ items, image }) => {
 
   const [toggleStatus, setToggleStatus] = useState(false);
   const [isDrawingPolygon, setIsDrawingPolygon] = useState(false);
+  const [isDrawingRectangle, setIsDrawingRectangle] = useState(false);
   const [currentZoom, setCurrentZoom] = useState<number | undefined>();
 
   return (
@@ -20,11 +21,19 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         </button>
         <button
           onClick={() => {
-            ref.current?.drawPolygon();
+            ref.current?.drawObject();
             setIsDrawingPolygon(!isDrawingPolygon);
           }}
         >
           Draw Polygon [{isDrawingPolygon ? "ON" : "OFF"}]
+        </button>
+        <button
+          onClick={() => {
+            ref.current?.drawObject();
+            setIsDrawingRectangle(!isDrawingRectangle);
+          }}
+        >
+          Draw Rectangle [{isDrawingRectangle ? "ON" : "OFF"}]
         </button>
         <button onClick={() => ref.current?.downloadImage()}>
           Download Image

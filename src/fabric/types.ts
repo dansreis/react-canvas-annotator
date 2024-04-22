@@ -48,8 +48,9 @@ export type CanvasAnnotationState = {
   isDragging?: boolean;
   lastClickCoords?: { x: number; y: number };
 
-  drawingPolygon?: {
+  drawingObject?: {
     id?: string;
+    type: "polygon" | "rectangle";
     isDrawing: boolean;
     points: { x: number; y: number }[];
   };

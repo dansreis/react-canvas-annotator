@@ -32,7 +32,7 @@ export type BoardActions = {
   resetZoom: () => void;
   deleteSelectedObjects: () => void;
   downloadImage: () => void;
-  drawPolygon: () => void;
+  drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: () => CanvasObject[];
 };
 
@@ -65,13 +65,18 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         const canvas = editor?.canvas;
         if (canvas) fabricActions.deleteSelected(canvas);
       },
-      drawPolygon() {
-        const isDrawing = !drawingPolygon?.isDrawing;
+      drawObject(type?: "rectangle" | "polygon") {
+        const isDrawing = !drawingObject?.isDrawing;
         if (isDrawing) {
           const polygonId = uuidv4();
-          setDrawingPolygon({ id: polygonId, isDrawing: true, points: [] });
+          setDrawingObject({
+            id: polygonId,
+            type: type ?? "polygon",
+            isDrawing: true,
+            points: [],
+          });
         } else {
-          resetDrawingPolygon();
+          resetDrawingObject();
         }
       },
       downloadImage() {
@@ -127,16 +132,20 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       initialStatus?.draggingEnabled || false,
     );
 
-    const [drawingPolygon, setDrawingPolygon] = useState<
-      NonNullable<fabricTypes.CanvasAnnotationState["drawingPolygon"]>
-    >({ isDrawing: false, points: [] });
+    const [drawingObject, setDrawingObject] = useState<
+      NonNullable<fabricTypes.CanvasAnnotationState["drawingObject"]>
+    >({ isDrawing: false, type: "polygon", points: [] });
 
-    const resetDrawingPolygon = () => {
-      const state = { isDrawing: false, points: [] };
+    const resetDrawingObject = () => {
+      const state: fabricTypes.CanvasAnnotationState["drawingObject"] = {
+        isDrawing: false,
+        type: "polygon",
+        points: [],
+      };
       (
         editor?.canvas as unknown as fabricTypes.CanvasAnnotationState
-      ).drawingPolygon = state;
-      setDrawingPolygon(state);
+      ).drawingObject = state;
+      setDrawingObject(state);
     };
 
     useEffect(() => {
@@ -186,7 +195,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:wheel",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
-          // if (this.drawingPolygon?.isDrawing) return;
+          // if (this.drawingObject?.isDrawing) return;
           const delta = opt.e.deltaY;
           let zoom = editor.canvas.getZoom();
           zoom *= 0.999 ** delta;
@@ -211,20 +220,20 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           this.selection = false;
           this.lastPosX = evt.clientX;
           this.lastPosY = evt.clientY;
-          this.drawingPolygon = drawingPolygon;
+          this.drawingObject = drawingObject;
 
           // Extract coords for polygon drawing
           const pointer = editor?.canvas.getPointer(opt.e);
           const lastClickCoords = { x: pointer.x, y: pointer.y };
           this.lastClickCoords = lastClickCoords;
 
-          if (drawingPolygon.isDrawing) {
+          if (drawingObject.isDrawing && drawingObject.type === "polygon") {
             // Retrive the existing polygon
 
             const polygon =
               fabricUtils.findObjectByName<fabricTypes.CustomObject>(
                 editor.canvas,
-                drawingPolygon.id,
+                drawingObject.id,
               );
             // Delete previously created polygon (if exists)
             if (polygon) editor.canvas.remove(polygon);
@@ -252,25 +261,25 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
             // Update drawing points of polygon
             const newPoints = isInitialPoint
-              ? drawingPolygon.points
-              : drawingPolygon.points.concat(lastClickCoords);
+              ? drawingObject.points
+              : drawingObject.points.concat(lastClickCoords);
 
             // Draw a new polygon from scratch
             const newPolygon = fabricUtils.createControllableCustomObject(
               isInitialPoint ? fabric.Polygon : fabric.Polyline,
               newPoints,
               {
-                name: drawingPolygon.id,
+                name: drawingObject.id,
                 fill: "rgba(255, 99, 71, 0.2)",
                 hasBorders: false,
               },
             );
 
             if (isInitialPoint) {
-              resetDrawingPolygon();
+              resetDrawingObject();
             } else {
-              setDrawingPolygon({
-                ...drawingPolygon,
+              setDrawingObject({
+                ...drawingObject,
                 points: newPoints,
               });
             }
@@ -315,16 +324,19 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             }
           }
 
-          if (this.drawingPolygon?.isDrawing) {
+          if (
+            this.drawingObject?.isDrawing &&
+            this.drawingObject.type === "polygon"
+          ) {
             const pointer = editor?.canvas.getPointer(opt.e);
-            const newPoints = drawingPolygon.points.concat({
+            const newPoints = drawingObject.points.concat({
               x: pointer.x,
               y: pointer.y,
             });
 
             const polygon = fabricUtils.findObjectByName(
               editor.canvas,
-              drawingPolygon.id,
+              drawingObject.id,
             );
 
             if (polygon) editor.canvas.remove(polygon);
@@ -334,7 +346,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               fabric.Polyline,
               newPoints,
               {
-                name: drawingPolygon.id,
+                name: drawingObject.id,
                 fill: "rgba(255, 99, 71, 0.2)",
                 hasBorders: false,
               },
@@ -431,7 +443,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       image,
       onLoadedImage,
       onZoomChange,
-      drawingPolygon,
+      drawingObject,
     ]);
 
     // Update zoom parent value
