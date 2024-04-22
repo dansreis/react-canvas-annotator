@@ -186,7 +186,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:wheel",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
-          if (this.drawingPolygon?.isDrawing) return;
+          // if (this.drawingPolygon?.isDrawing) return;
           const delta = opt.e.deltaY;
           let zoom = editor.canvas.getZoom();
           zoom *= 0.999 ** delta;
@@ -287,6 +287,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         "mouse:up",
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         function (this: fabricTypes.CanvasAnnotationState, _opt) {
+          if (this.isDragging) {
+            // Rese the  viewport
+            editor.canvas.zoomToPoint(
+              { x: _opt.e.offsetX, y: _opt.e.offsetY },
+              editor.canvas.getZoom(),
+            );
+          }
           this.isDragging = false;
           this.selection = true;
         },
@@ -302,9 +309,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             if (vpt) {
               vpt[4] += e.clientX - this.lastPosX;
               vpt[5] += e.clientY - this.lastPosY;
-              editor.canvas.requestRenderAll();
               this.lastPosX = e.clientX;
               this.lastPosY = e.clientY;
+              editor.canvas.requestRenderAll();
             }
           }
 
@@ -457,7 +464,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           name: `ID_${item.id}`,
           fill: undefined,
           stroke: "red",
-          strokeWidth: 1, // TODO: Change here!
+          cornerStyle: "circle",
+          cornerSize: 10,
+          strokeWidth: 0.5, // TODO: Change here!
         });
         canvas.add(polygon);
       }

@@ -1,7 +1,7 @@
 export const DEFAULT_POLYLINE_OPTIONS: fabric.IPolylineOptions = {
   stroke: "red",
   fill: undefined,
-  strokeWidth: 1,
+  strokeWidth: 0.5,
   selectable: true,
   hasBorders: true,
   hasControls: true,

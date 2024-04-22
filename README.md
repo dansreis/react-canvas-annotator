@@ -20,8 +20,9 @@ Powered by FabricJS canvas at its core, this component empowers users to seamles
 
 - [X] Annotations on image
 - [ ] Bounding Box Annotation
-- [ ] Point and Polygon Annotation
-- [ ] Image zoom and drag
+- [X] Polygon Annotation
+- [X] Image zoom and drag
+- [ ] Highlight by ID
 - [ ] Categorize annotations with colors and label
 
 ![Screenshot of Annotator](docs/annotations-board.png)
