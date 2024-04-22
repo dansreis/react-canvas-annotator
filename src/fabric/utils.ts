@@ -143,6 +143,7 @@ export const createControllableCustomObject = <
   ) => T,
   points: { x: number; y: number }[],
   options?: IPolylineOptions,
+  isRectangle?: boolean,
 ) => {
   const _options: fabric.IPolylineOptions = Object.assign(
     DEFAULT_POLYLINE_OPTIONS,
@@ -150,7 +151,7 @@ export const createControllableCustomObject = <
   );
 
   const controllableObject = new FabricObj(points, _options);
-  if ((controllableObject.points?.length ?? 0) > 0) {
+  if (isRectangle === false && (controllableObject.points?.length ?? 0) > 0) {
     const controls = controllableObject.points?.reduce<{
       [key: string]: CustomControl;
     }>((acc, _point, index) => {

@@ -287,6 +287,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             // Add object to canvas and set it as ACTIVE
             editor.canvas.add(newPolygon);
             editor.canvas.setActiveObject(newPolygon);
+          } else if (
+            this.drawingObject?.isDrawing &&
+            this.drawingObject.type === "rectangle"
+          ) {
+            console.log("Draw Rectangle - BEGIN");
           }
         },
       );
@@ -305,6 +310,15 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           }
           this.isDragging = false;
           this.selection = true;
+
+          // Disable drawing when it's a rectangle on mouse up
+          if (
+            this.drawingObject?.isDrawing &&
+            this.drawingObject.type === "rectangle"
+          ) {
+            console.log("Draw Rectangle - DOWN");
+            resetDrawingObject();
+          }
         },
       );
 
@@ -312,6 +326,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:move",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
+          const pointer = editor?.canvas.getPointer(opt.e);
           if (this.isDragging) {
             const e = opt.e;
             const vpt = editor.canvas.viewportTransform;
@@ -328,7 +343,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             this.drawingObject?.isDrawing &&
             this.drawingObject.type === "polygon"
           ) {
-            const pointer = editor?.canvas.getPointer(opt.e);
             const newPoints = drawingObject.points.concat({
               x: pointer.x,
               y: pointer.y,
@@ -352,31 +366,42 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               },
             );
 
-            // Add the object events to check if it stopped drawing
-            // newPolygon.on(
-            //   "mousedown",
-            //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            //   function (this: fabricTypes.ControllableObjectState, _opt) {
-            //     const pointer = editor?.canvas.getPointer(_opt.e);
-            //     if (pointer && _opt.target?.oCoords) {
-            //       const collisionPoint: string | undefined = undefined;
-            //       const initialPoint = this.oCoords["p0"];
-            //       const { tl, tr, bl, br } = initialPoint.corner;
-            //       const clickedOnInitialPoint = fabricUtils.isCoordInsideCoords(
-            //         pointer,
-            //         { tl, tr, bl, br },
-            //       );
-
-            //       if (clickedOnInitialPoint) {
-            //         console.log("inside_coords", pointer, collisionPoint);
-            //       }
-            //     }
-            //   },
-            // );
-
             // Add object to canvas and set it as ACTIVE
             editor.canvas.add(newPolygon);
             editor.canvas.setActiveObject(newPolygon);
+          } else if (
+            this.drawingObject?.isDrawing &&
+            this.drawingObject.type === "rectangle"
+          ) {
+            const rectangle = fabricUtils.findObjectByName(
+              editor.canvas,
+              drawingObject.id,
+            );
+
+            if (rectangle) editor.canvas.remove(rectangle);
+
+            if (!this.lastClickCoords) return;
+
+            const newPoints = [
+              { x: this.lastClickCoords?.x, y: this.lastClickCoords?.y },
+              { x: pointer.x, y: this.lastClickCoords?.y },
+              { x: pointer.x, y: pointer.y },
+              { x: this.lastClickCoords?.x, y: pointer.y },
+            ];
+            // Draw a new rectangle from scratch
+            const newRectangle = fabricUtils.createControllableCustomObject(
+              fabric.Polygon,
+              newPoints,
+              {
+                name: drawingObject.id,
+                fill: "rgba(255, 99, 71, 0.2)",
+                hasBorders: false,
+              },
+            );
+
+            // // Add object to canvas and set it as ACTIVE
+            editor.canvas.add(newRectangle);
+            editor.canvas.setActiveObject(newRectangle);
           }
 
           // // Add the object events
@@ -478,7 +503,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           stroke: "red",
           cornerStyle: "circle",
           cornerSize: 10,
-          strokeWidth: 0.5, // TODO: Change here!
+          strokeWidth: 1, // TODO: Change here!
         });
         canvas.add(polygon);
       }

@@ -29,7 +29,7 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         </button>
         <button
           onClick={() => {
-            ref.current?.drawObject();
+            ref.current?.drawObject("rectangle");
             setIsDrawingRectangle(!isDrawingRectangle);
           }}
         >
