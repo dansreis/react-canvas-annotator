@@ -397,6 +397,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
                 fill: "rgba(255, 99, 71, 0.2)",
                 hasBorders: false,
               },
+              true,
             );
 
             // // Add object to canvas and set it as ACTIVE

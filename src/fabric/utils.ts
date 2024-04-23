@@ -151,7 +151,7 @@ export const createControllableCustomObject = <
   );
 
   const controllableObject = new FabricObj(points, _options);
-  if (isRectangle === false && (controllableObject.points?.length ?? 0) > 0) {
+  if (isRectangle !== true && (controllableObject.points?.length ?? 0) > 0) {
     const controls = controllableObject.points?.reduce<{
       [key: string]: CustomControl;
     }>((acc, _point, index) => {
