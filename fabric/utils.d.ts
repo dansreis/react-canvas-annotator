@@ -1,6 +1,6 @@
-import { default as CustomControl } from './controls/CustomControl';
-import { IPolylineOptions } from 'fabric/fabric-impl';
 import { fabric } from 'fabric';
+import { IPolylineOptions } from 'fabric/fabric-impl';
+import { default as CustomControl } from './controls/CustomControl';
 
 import * as fabricTypes from "./types";
 /**

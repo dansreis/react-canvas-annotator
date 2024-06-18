@@ -1,5 +1,5 @@
-import { CanvasObject } from './types';
 import { default as React } from '../../../node_modules/react';
+import { CanvasObject } from './types';
 
 export type BoardProps = {
     items: CanvasObject[];
