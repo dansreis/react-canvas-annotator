@@ -43,4 +43,4 @@ jobs:
       - name: Publish to Storybook
         run: |
           npm run build-storybook
-          npm run deploy-storybook
+          npx gh-pages -d storybook-static -r https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git

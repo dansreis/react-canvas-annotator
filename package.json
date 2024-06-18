@@ -1,7 +1,7 @@
 {
   "name": "@dansreis/react-canvas-annotator",
   "homepage": "http://dansreis.github.io/react-canvas-annotator",
-  "version": "1.0.0-alpha",
+  "version": "1.0.1-alpha",
   "description": "",
   "type": "module",
   "main": "dist/index.cjs.js",
@@ -20,8 +20,7 @@
     "test:ui": "vitest --ui",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "prepare": "npm run build",
-    "deploy-storybook": "gh-pages -d storybook-static"
+    "prepare": "npm run build"
   },
   "author": "Daniel Reis",
   "license": "MIT",
