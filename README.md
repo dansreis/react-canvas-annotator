@@ -13,7 +13,7 @@
 
 Powered by FabricJS canvas at its core, this component empowers users to seamlessly integrate annotations such as bounding boxes, polygons, and points onto images or documents. By exposing canvas interactions, it provides a foundation for constructing larger and more complex components.
 
-[Check out the demo here.](http://localhost:6006)
+[Check out the demo here.](https://dansreis.github.io/react-canvas-annotator/?path=/story/board--main)
 
 ## Features
 
