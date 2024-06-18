@@ -39,7 +39,7 @@
     "@storybook/react-vite": "^8.0.6",
     "@storybook/test": "^8.0.6",
     "@storybook/theming": "^8.1.9",
-    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^15.0.0",
     "@types/fabric": "^5.3.7",
     "@types/react": "^18.2.75",
