@@ -268,11 +268,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             const newPolygon = fabricUtils.createControllableCustomObject(
               isInitialPoint ? fabric.Polygon : fabric.Polyline,
               newPoints,
-              {
-                name: drawingObject.id,
-                fill: "rgba(255, 99, 71, 0.2)",
-                hasBorders: false,
-              },
+              { name: drawingObject.id },
             );
 
             if (isInitialPoint) {
@@ -326,8 +322,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:move",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
+          const isDrawingObject = this.drawingObject?.isDrawing;
+          const drawingObjectType = this.drawingObject?.type;
           const pointer = editor?.canvas.getPointer(opt.e);
-          if (this.isDragging) {
+
+          if (this.isDragging && !isDrawingObject) {
             const e = opt.e;
             const vpt = editor.canvas.viewportTransform;
             if (vpt) {
@@ -339,10 +338,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             }
           }
 
-          if (
-            this.drawingObject?.isDrawing &&
-            this.drawingObject.type === "polygon"
-          ) {
+          if (isDrawingObject && drawingObjectType === "polygon") {
             const newPoints = drawingObject.points.concat({
               x: pointer.x,
               y: pointer.y,
@@ -359,20 +355,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             const newPolygon = fabricUtils.createControllableCustomObject(
               fabric.Polyline,
               newPoints,
-              {
-                name: drawingObject.id,
-                fill: "rgba(255, 99, 71, 0.2)",
-                hasBorders: false,
-              },
+              { name: drawingObject.id },
             );
 
             // Add object to canvas and set it as ACTIVE
             editor.canvas.add(newPolygon);
             editor.canvas.setActiveObject(newPolygon);
-          } else if (
-            this.drawingObject?.isDrawing &&
-            this.drawingObject.type === "rectangle"
-          ) {
+          } else if (isDrawingObject && drawingObjectType === "rectangle") {
             const rectangle = fabricUtils.findObjectByName(
               editor.canvas,
               drawingObject.id,
@@ -392,11 +381,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             const newRectangle = fabricUtils.createControllableCustomObject(
               fabric.Polygon,
               newPoints,
-              {
-                name: drawingObject.id,
-                fill: "rgba(255, 99, 71, 0.2)",
-                hasBorders: false,
-              },
+              { name: drawingObject.id },
               true,
             );
 
@@ -404,34 +389,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             editor.canvas.add(newRectangle);
             editor.canvas.setActiveObject(newRectangle);
           }
-
-          // // Add the object events
-          // newPolygon.on(
-          //   "mousedown",
-          //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          //   function (this: fabricTypes.ControllableObjectState, _opt) {
-          //     const pointer = editor?.canvas.getPointer(opt.e);
-          //     if (pointer && _opt.target?.oCoords) {
-          //       let isInside = false;
-          //       let collisionPoint: string | undefined = undefined;
-          //       for (const pointKey in this.oCoords) {
-          //         const { tl, tr, bl, br } = this.oCoords[pointKey].corner;
-          //         const clickedOnCorner = fabricUtils.isCoordInsideCoords(
-          //           pointer,
-          //           [tl, tr, bl, br],
-          //         );
-          //         if (clickedOnCorner) {
-          //           isInside = true;
-          //           collisionPoint = pointKey;
-          //           break;
-          //         }
-          //       }
-          //       if (isInside) {
-          //         console.log("inside_coords", pointer, collisionPoint);
-          //       }
-          //     }
-          //   },
-          // );
         },
       );
 
@@ -486,7 +443,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       fabricActions.deleteAll(editor?.canvas);
 
       for (const item of items) {
-        //TODO: Use fabricUtils.createControllableCustomObject()
         const scaledCoords = item.coords.map((p) =>
           fabricUtils.toScaledCoord({
             cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
@@ -498,14 +454,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             scaleRatio,
           }),
         );
-        const polygon = new fabric.Polygon(scaledCoords, {
-          name: `ID_${item.id}`,
-          fill: undefined,
-          stroke: "red",
-          cornerStyle: "circle",
-          cornerSize: 10,
-          strokeWidth: 1, // TODO: Change here!
-        });
+
+        const polygon = fabricUtils.createControllableCustomObject(
+          fabric.Polygon,
+          scaledCoords,
+          { name: `ID_${item.id}` },
+          scaledCoords.length === 4, // Is a rectangle
+        );
         canvas.add(polygon);
       }
     }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);
