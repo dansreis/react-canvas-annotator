@@ -6,7 +6,6 @@
 [![NPM](https://img.shields.io/npm/v/@dansreis/react-canvas-annotator)](https://www.npmjs.com/package/@dansreis/react-canvas-annotator)
 [![npm](https://img.shields.io/npm/dm/@dansreis/react-canvas-annotator)](https://www.npmjs.com/package/@dansreis/react-canvas-annotator)
 [![Build Status](https://github.com/dansreis/react-canvas-annotator/actions/workflows/main.yml/badge.svg)](https://github.com/dansreis/react-canvas-annotator/actions)
-![Github All Contributors](https://img.shields.io/github/all-contributors/dansreis/react-canvas-annotator)
 
 # react-canvas-annotator
 
