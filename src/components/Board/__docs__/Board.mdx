@@ -34,8 +34,23 @@ export default Example;
 
 #### Arguments
 
-- **text** _`() => void`_ - A string that represents the text content of the button.
-- **primary** - A boolean indicating whether the button should have a primary styling or not. Typically, a primary button stands out as the main action in a user interface.
-- **disabled** - A boolean indicating whether the button should be disabled or not. When disabled, the button cannot be clicked or interacted with.
-- **size** - A string with one of three possible values: "small," "medium," or "large." It defines the size or dimensions of the button.
-- **onClick** - A function that is called when the button is clicked. It receives a MouseEventHandler for handling the click event on the button element.
+- **image** `{ name: string, src: string }` - The image object containing the name and source URL.
+- **items** `CanvasObject[]`: - An array of canvas objects to be rendered.
+- **initialStatus** `{ draggingEnabled?: boolean, currentZoom?: number, scaleRatio?: number }`: - Optional initial status settings for the board:
+
+`draggingEnabled`: Boolean flag indicating if dragging is enabled.
+
+`currentZoom`: Number representing the initial zoom level.
+
+`scaleRatio`: Number representing the scale ratio.
+
+`onResetZoom () => void`: Optional callback function to reset the zoom level.
+
+`onZoomChange: `(currentZoom: number) => void` - Optional callback function called when the zoom level changes.
+
+`currentZoom`: Number representing the current zoom level.
+
+- **onToggleDragging**: `(currentStatus: boolean) => void` -  Optional callback function called when dragging status changes.
+
+- **currentStatus**: Boolean indicating the current dragging status.
+- **onLoadedImage**: `({ width, height }: { width: number, height: number }) => void` -  Optional callback function called when the image is loaded (width: Width of the loaded image, height: Height of the loaded image).
