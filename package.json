@@ -30,7 +30,7 @@
     "@storybook/addon-essentials": "^8.0.6",
     "@storybook/addon-interactions": "^8.1.10",
     "@storybook/addon-links": "^8.1.10",
-    "@storybook/addon-mdx-gfm": "^8.1.9",
+    "@storybook/addon-mdx-gfm": "^8.1.10",
     "@storybook/addon-onboarding": "^8.1.10",
     "@storybook/addon-themes": "^8.1.10",
     "@storybook/blocks": "^8.1.10",
