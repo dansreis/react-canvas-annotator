@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { fabric } from "fabric";
+import { v4 as uuidv4 } from "uuid";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
 import { CanvasObject } from "./types";
-import * as fabricUtils from "../../fabricUtils";
+import * as fabricUtils from "../../fabric/utils";
+import * as fabricActions from "../../fabric/actions";
+import * as fabricTypes from "../../fabric/types";
 
 export type BoardProps = {
-  primary?: boolean;
   items: CanvasObject[];
   image: { name: string; src: string };
   initialStatus?: {
@@ -30,25 +32,13 @@ export type BoardActions = {
   resetZoom: () => void;
   deleteSelectedObjects: () => void;
   downloadImage: () => void;
-  drawPolygon: () => void;
-  randomAction1: () => void;
-  randomAction2: () => void;
-};
-
-type CanvasAnnotationState = {
-  selection?: boolean;
-  lastPosX: number;
-  lastPosY: number;
-  isDragging?: boolean;
-  drawingPolygon?: boolean;
-  lastClickCoords?: { x: number; y: number };
-  polygonPoints?: { x: number; y: number }[];
+  drawObject: (type?: "rectangle" | "polygon") => void;
+  retrieveObjects: () => CanvasObject[];
 };
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
   (
     {
-      primary = true,
       image,
       initialStatus,
       items,
@@ -73,60 +63,57 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       },
       deleteSelectedObjects() {
         const canvas = editor?.canvas;
-        if (canvas) fabricUtils.deleteSelected(canvas);
+        if (canvas) fabricActions.deleteSelected(canvas);
       },
-      drawPolygon() {
-        setDrawingPolygon(!drawingPolygon);
-      },
-      randomAction1() {
-        const line = new fabric.Polygon(
-          [
-            { x: 40, y: 40 },
-            { x: 120, y: 120 },
-          ],
-          {
-            stroke: "red",
-            fill: undefined,
-            strokeWidth: 1,
-            selectable: true,
-            hasBorders: true,
-            hasControls: true,
-            cornerStyle: "rect",
-            cornerColor: "rgba(113, 113, 117, 0.5)",
-            objectCaching: false,
-          },
-        );
-        const controls = line.points?.reduce<{
-          [key: string]: fabric.Control;
-        }>((acc, _point, index) => {
-          acc["p" + index] = new fabricUtils.CustomControl(
-            {
-              positionHandler: fabricUtils.polygonPositionHandler,
-              actionHandler: fabricUtils.anchorWrapper(
-                index > 0 ? index - 1 : line.points!.length - 1,
-                fabricUtils.actionHandler,
-              ),
-              actionName: "modifyPolygon",
-            },
-            index,
-          );
-          return acc;
-        }, {});
-        if (controls) {
-          line.controls = controls;
+      drawObject(type?: "rectangle" | "polygon") {
+        const isDrawing = !drawingObject?.isDrawing;
+        if (isDrawing) {
+          const polygonId = uuidv4();
+          setDrawingObject({
+            id: polygonId,
+            type: type ?? "polygon",
+            isDrawing: true,
+            points: [],
+          });
+        } else {
+          resetDrawingObject();
         }
-        editor?.canvas.add(line);
-      },
-      randomAction2() {
-        console.log("randomAction2");
       },
       downloadImage() {
-        fabricUtils.canvasImageDownload(image);
+        fabricActions.canvasImageDownload(image);
+      },
+      retrieveObjects: () => {
+        const canvas = editor?.canvas;
+        if (canvas) {
+          const customObjects =
+            fabricUtils.retrieveObjects<fabricTypes.CustomObject>(canvas);
+          if (!customObjects) return [];
+          return customObjects.map((co) => {
+            const updatedCoordPoints = fabricUtils.pointsInCanvas(co);
+            const updatedCoords = updatedCoordPoints.map((p) =>
+              fabricUtils.toOriginalCoord({
+                cInfo: {
+                  width: canvas.getWidth(),
+                  height: canvas.getHeight(),
+                },
+                iInfo: imageSize,
+                coord: p,
+                scaleRatio,
+              }),
+            );
+            return {
+              id: co.name!,
+              category: "TODO_category",
+              color: "TODO_color",
+              value: "TODO_value",
+              coords: updatedCoords,
+            };
+          });
+        }
+        return [];
       },
     }));
     const { editor, onReady } = useFabricJSEditor();
-
-    const [drawingPolygon, setDrawingPolygon] = useState(false);
 
     const [currentZoom, setCurrentZoom] = useState<number>(
       initialStatus?.currentZoom || 100,
@@ -144,6 +131,22 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     const [draggingEnabled, setDraggingEnabled] = useState(
       initialStatus?.draggingEnabled || false,
     );
+
+    const [drawingObject, setDrawingObject] = useState<
+      NonNullable<fabricTypes.CanvasAnnotationState["drawingObject"]>
+    >({ isDrawing: false, type: "polygon", points: [] });
+
+    const resetDrawingObject = () => {
+      const state: fabricTypes.CanvasAnnotationState["drawingObject"] = {
+        isDrawing: false,
+        type: "polygon",
+        points: [],
+      };
+      (
+        editor?.canvas as unknown as fabricTypes.CanvasAnnotationState
+      ).drawingObject = state;
+      setDrawingObject(state);
+    };
 
     useEffect(() => {
       const parentCanvasElement = document.getElementById(
@@ -188,10 +191,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         { selectable: false },
       );
 
+      // On Wheel interation/move
       editor.canvas.on(
         "mouse:wheel",
-        function (this: CanvasAnnotationState, opt) {
-          if (this.drawingPolygon) return;
+        function (this: fabricTypes.CanvasAnnotationState, opt) {
+          // if (this.drawingObject?.isDrawing) return;
           const delta = opt.e.deltaY;
           let zoom = editor.canvas.getZoom();
           zoom *= 0.999 ** delta;
@@ -207,142 +211,222 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         },
       );
 
+      // On Mouse right click (down)
       editor.canvas.on(
         "mouse:down",
-        function (this: CanvasAnnotationState, opt) {
+        function (this: fabricTypes.CanvasAnnotationState, opt) {
           const evt = opt.e;
           this.isDragging = draggingEnabled;
           this.selection = false;
           this.lastPosX = evt.clientX;
           this.lastPosY = evt.clientY;
-          this.drawingPolygon = drawingPolygon;
+          this.drawingObject = drawingObject;
 
           // Extract coords for polygon drawing
           const pointer = editor?.canvas.getPointer(opt.e);
           const lastClickCoords = { x: pointer.x, y: pointer.y };
           this.lastClickCoords = lastClickCoords;
 
-          // Add all polygon points to be later drawn
-          if (drawingPolygon) {
-            if (this.polygonPoints) {
-              this.polygonPoints?.push(this.lastClickCoords);
+          if (drawingObject.isDrawing && drawingObject.type === "polygon") {
+            // Retrive the existing polygon
+
+            const polygon =
+              fabricUtils.findObjectByName<fabricTypes.CustomObject>(
+                editor.canvas,
+                drawingObject.id,
+              );
+            // Delete previously created polygon (if exists)
+            if (polygon) editor.canvas.remove(polygon);
+
+            const hasClickedOnInitialPoint = (p?: fabricTypes.CustomObject) => {
+              if (p === undefined) return false;
+              // const collisionPoint: string | undefined = undefined;
+              const initialPoint = p.oCoords["p0"];
+
+              if (initialPoint) {
+                const { tl, tr, bl, br } = initialPoint.corner;
+                // We need to ignore the zoom in order to obtain the accurate coordinates
+                const zoomedPointer = editor?.canvas.getPointer(opt.e, true);
+                return fabricUtils.isCoordInsideCoords(zoomedPointer, {
+                  tl,
+                  tr,
+                  bl,
+                  br,
+                });
+              }
+              return false;
+            };
+
+            const isInitialPoint = hasClickedOnInitialPoint(polygon);
+
+            // Update drawing points of polygon
+            const newPoints = isInitialPoint
+              ? drawingObject.points
+              : drawingObject.points.concat(lastClickCoords);
+
+            // Draw a new polygon from scratch
+            const newPolygon = fabricUtils.createControllableCustomObject(
+              isInitialPoint ? fabric.Polygon : fabric.Polyline,
+              newPoints,
+              { name: drawingObject.id },
+            );
+
+            if (isInitialPoint) {
+              resetDrawingObject();
             } else {
-              this.polygonPoints = [this.lastClickCoords];
+              setDrawingObject({
+                ...drawingObject,
+                points: newPoints,
+              });
             }
 
-            if (this.polygonPoints?.length === 4) {
-              setDrawingPolygon(false);
-              return;
-            }
-
-            // Draw the polygon with the existing coords
-            // if (this.polygonPoints?.length ?? 0 >= 2) {
-            //   const polygonId = "polygonId";
-            //   const previousPolygon = editor.canvas
-            //     .getObjects()
-            //     .find((o) => o.name === polygonId);
-
-            //   if (previousPolygon) editor.canvas.remove(previousPolygon);
-            //   const newPolygon = new fabric.Polygon(this.polygonPoints ?? [], {
-            //     name: polygonId,
-            //     fill: undefined,
-            //     stroke: "red",
-            //     strokeWidth: 2,
-            //   });
-            //   editor.canvas.add(newPolygon);
-            // }
+            // Add object to canvas and set it as ACTIVE
+            editor.canvas.add(newPolygon);
+            editor.canvas.setActiveObject(newPolygon);
+          } else if (
+            this.drawingObject?.isDrawing &&
+            this.drawingObject.type === "rectangle"
+          ) {
+            console.log("Draw Rectangle - BEGIN");
           }
-          opt.e.preventDefault();
-          opt.e.stopPropagation();
         },
       );
 
+      // On Mouse right click (up)
+      editor.canvas.on(
+        "mouse:up",
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        function (this: fabricTypes.CanvasAnnotationState, _opt) {
+          if (this.isDragging) {
+            // Rese the  viewport
+            editor.canvas.zoomToPoint(
+              { x: _opt.e.offsetX, y: _opt.e.offsetY },
+              editor.canvas.getZoom(),
+            );
+          }
+          this.isDragging = false;
+          this.selection = true;
+
+          // Disable drawing when it's a rectangle on mouse up
+          if (
+            this.drawingObject?.isDrawing &&
+            this.drawingObject.type === "rectangle"
+          ) {
+            console.log("Draw Rectangle - DOWN");
+            resetDrawingObject();
+          }
+        },
+      );
+
+      // On Mouse free moving on canvas
       editor.canvas.on(
         "mouse:move",
-        function (this: CanvasAnnotationState, opt) {
-          if (this.isDragging) {
+        function (this: fabricTypes.CanvasAnnotationState, opt) {
+          const isDrawingObject = this.drawingObject?.isDrawing;
+          const drawingObjectType = this.drawingObject?.type;
+          const pointer = editor?.canvas.getPointer(opt.e);
+
+          if (this.isDragging && !isDrawingObject) {
             const e = opt.e;
             const vpt = editor.canvas.viewportTransform;
             if (vpt) {
               vpt[4] += e.clientX - this.lastPosX;
               vpt[5] += e.clientY - this.lastPosY;
-              editor.canvas.requestRenderAll();
               this.lastPosX = e.clientX;
               this.lastPosY = e.clientY;
+              editor.canvas.requestRenderAll();
             }
-          } else if (this.drawingPolygon) {
-            const pointer = editor?.canvas.getPointer(opt.e);
-
-            const polygonId = "polygonId";
-            const previousPolygon = fabricUtils.findObjectByName(
-              editor.canvas,
-              polygonId,
-            );
-
-            if (previousPolygon)
-              fabricUtils.deleteObject(editor.canvas, previousPolygon);
-
-            // Polygon "clicked" points with the cursor current pointer
-            const polygonPoints =
-              this.polygonPoints?.concat({ x: pointer.x, y: pointer.y }) ?? [];
-
-            const newPolygon = fabricUtils.createPolygon({
-              name: polygonId,
-              points: polygonPoints,
-              isPolyline: true,
-            });
-            editor.canvas.add(newPolygon);
           }
 
-          opt.e.preventDefault();
-          opt.e.stopPropagation();
+          if (isDrawingObject && drawingObjectType === "polygon") {
+            const newPoints = drawingObject.points.concat({
+              x: pointer.x,
+              y: pointer.y,
+            });
+
+            const polygon = fabricUtils.findObjectByName(
+              editor.canvas,
+              drawingObject.id,
+            );
+
+            if (polygon) editor.canvas.remove(polygon);
+
+            // Draw a new polygon from scratch
+            const newPolygon = fabricUtils.createControllableCustomObject(
+              fabric.Polyline,
+              newPoints,
+              { name: drawingObject.id },
+            );
+
+            // Add object to canvas and set it as ACTIVE
+            editor.canvas.add(newPolygon);
+            editor.canvas.setActiveObject(newPolygon);
+          } else if (isDrawingObject && drawingObjectType === "rectangle") {
+            const rectangle = fabricUtils.findObjectByName(
+              editor.canvas,
+              drawingObject.id,
+            );
+
+            if (rectangle) editor.canvas.remove(rectangle);
+
+            if (!this.lastClickCoords) return;
+
+            const newPoints = [
+              { x: this.lastClickCoords?.x, y: this.lastClickCoords?.y },
+              { x: pointer.x, y: this.lastClickCoords?.y },
+              { x: pointer.x, y: pointer.y },
+              { x: this.lastClickCoords?.x, y: pointer.y },
+            ];
+            // Draw a new rectangle from scratch
+            const newRectangle = fabricUtils.createControllableCustomObject(
+              fabric.Polygon,
+              newPoints,
+              { name: drawingObject.id },
+              true,
+            );
+
+            // // Add object to canvas and set it as ACTIVE
+            editor.canvas.add(newRectangle);
+            editor.canvas.setActiveObject(newRectangle);
+          }
         },
       );
-
-      editor.canvas.on("mouse:up", function (this: CanvasAnnotationState, opt) {
-        this.isDragging = false;
-        this.selection = true;
-
-        opt.e.preventDefault();
-        opt.e.stopPropagation();
-      });
 
       // Selected Objects
       editor.canvas.on(
         "selection:created",
-        function (this: CanvasAnnotationState, opt) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        function (this: fabricTypes.CanvasAnnotationState, _opt) {
           // console.log("SELECTED! ", opt.selected?.[0]);
-
-          opt.e.preventDefault();
-          opt.e.stopPropagation();
         },
       );
 
-      // editor.canvas.on("mouse:over", function (this: CanvasAnnotationState, opt) {
-      //   opt.target?.set("fill", "green");
-      //   editor.canvas.renderAll();
-
-      //   opt.e.preventDefault();
-      //   opt.e.stopPropagation();
-      // });
-
-      // editor.canvas.on("mouse:out", function (this: CanvasAnnotationState, opt) {
-      //   opt.target?.set("fill", "rgba(255,127,39,1)");
-      //   editor.canvas.renderAll();
-
-      //   opt.e.preventDefault();
-      //   opt.e.stopPropagation();
-      // });
+      // Objects Moving
+      editor.canvas.on(
+        "object:modified",
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        function (this: fabricTypes.CanvasAnnotationState, _opt) {
+          const obj = _opt.target as fabricTypes.CustomObject | undefined;
+          if (obj) {
+            console.log(`Object ["${obj.name}"] modified event`);
+          }
+        },
+      );
 
       editor.canvas.renderAll();
+
+      // TODO: Need to verify this
+      // Clear all canvas events when the status changes.
+      return () => {
+        editor.canvas.off();
+      };
     }, [
-      primary,
       draggingEnabled,
       editor,
       image,
       onLoadedImage,
       onZoomChange,
-      drawingPolygon,
+      drawingObject,
     ]);
 
     // Update zoom parent value
@@ -352,35 +436,34 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
     // Load Initial items
     useEffect(() => {
-      const toScaledCoord = (coord: { x: number; y: number }) => {
-        const height = editor?.canvas.getHeight() ?? 1;
-        const width = editor?.canvas.getWidth() ?? 1;
-        const x =
-          width / 2 - (imageSize.width * scaleRatio) / 2 + coord.x * scaleRatio;
-        const y =
-          height / 2 -
-          (imageSize.height * scaleRatio) / 2 +
-          coord.y * scaleRatio;
-
-        return { x, y };
-      };
-
       const canvas = editor?.canvas;
       if (!canvas) return;
 
       // Clear all objects from canvas
-      fabricUtils.deleteAll(editor?.canvas);
+      fabricActions.deleteAll(editor?.canvas);
 
       for (const item of items) {
-        const polygon = new fabric.Polygon(item.coords.map(toScaledCoord), {
-          name: `ID_${item.id}`,
-          fill: undefined,
-          stroke: "red",
-          strokeWidth: 1, // TODO: Change here!
-        });
+        const scaledCoords = item.coords.map((p) =>
+          fabricUtils.toScaledCoord({
+            cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
+            iInfo: {
+              width: imageSize.width,
+              height: imageSize.height,
+            },
+            coord: p,
+            scaleRatio,
+          }),
+        );
+
+        const polygon = fabricUtils.createControllableCustomObject(
+          fabric.Polygon,
+          scaledCoords,
+          { name: `ID_${item.id}` },
+          scaledCoords.length === 4, // Is a rectangle
+        );
         canvas.add(polygon);
       }
-    }, [editor?.canvas, imageSize.height, imageSize.width, items, scaleRatio]);
+    }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);
 
     //   const renderIcon = (
     //     ctx: CanvasRenderingContext2D,

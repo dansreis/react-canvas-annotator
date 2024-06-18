@@ -1,10 +1,12 @@
 import React, { FC, useState } from "react";
 import Board, { BoardActions, BoardProps } from "../Board";
 
-const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
+const Example: FC<BoardProps> = ({ items, image }) => {
   const ref = React.createRef<BoardActions>();
 
   const [toggleStatus, setToggleStatus] = useState(false);
+  const [isDrawingPolygon, setIsDrawingPolygon] = useState(false);
+  const [isDrawingRectangle, setIsDrawingRectangle] = useState(false);
   const [currentZoom, setCurrentZoom] = useState<number | undefined>();
 
   return (
@@ -17,15 +19,32 @@ const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
         <button onClick={() => ref.current?.deleteSelectedObjects()}>
           Delete Selected
         </button>
-        <button onClick={() => ref.current?.drawPolygon()}>Draw Polygon</button>
+        <button
+          onClick={() => {
+            ref.current?.drawObject();
+            setIsDrawingPolygon(!isDrawingPolygon);
+          }}
+        >
+          Draw Polygon [{isDrawingPolygon ? "ON" : "OFF"}]
+        </button>
+        <button
+          onClick={() => {
+            ref.current?.drawObject("rectangle");
+            setIsDrawingRectangle(!isDrawingRectangle);
+          }}
+        >
+          Draw Rectangle [{isDrawingRectangle ? "ON" : "OFF"}]
+        </button>
         <button onClick={() => ref.current?.downloadImage()}>
           Download Image
         </button>
-        <button onClick={() => ref.current?.randomAction1()}>
-          RandomAction (1)
-        </button>
-        <button onClick={() => ref.current?.randomAction2()}>
-          RandomAction (2)
+        <button
+          onClick={() => {
+            const asd = ref.current?.retrieveObjects();
+            console.log(asd);
+          }}
+        >
+          Retrieve Objects
         </button>
       </div>
       <div style={{ display: "flex", gap: "10px" }}>
@@ -48,7 +67,6 @@ const Example: FC<BoardProps> = ({ primary = true, items, image }) => {
       >
         <Board
           ref={ref}
-          primary={primary}
           image={image}
           items={items}
           onToggleDragging={(s) => setToggleStatus(s)}
