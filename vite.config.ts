@@ -19,8 +19,11 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    setupFiles: ["./vitest.setup.ts"],
     environment: "jsdom",
-    setupFiles: "./setupTests.ts",
+    deps: {
+      inline: ["vitest-canvas-mock"],
+    },
   },
   plugins: [dts()], // Uses the 'vite-plugin-dts' plugin for generating TypeScript declaration files (d.ts).
 });
