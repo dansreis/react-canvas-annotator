@@ -6,6 +6,7 @@ import { CanvasObject } from "./types";
 import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
 import * as fabricTypes from "../../fabric/types";
+import parse from "color-parse";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -458,7 +459,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         const polygon = fabricUtils.createControllableCustomObject(
           fabric.Polygon,
           scaledCoords,
-          { name: `ID_${item.id}` },
+          {
+            name: `ID_${item.id}`,
+            stroke: item.color,
+            fill: `rgba(${parse(item.color).values.join(",")},${item.opacity ?? 0.4})`,
+          },
           scaledCoords.length === 4, // Is a rectangle
         );
         canvas.add(polygon);
