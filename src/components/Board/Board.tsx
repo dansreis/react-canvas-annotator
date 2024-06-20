@@ -167,6 +167,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // Change the cursor
       editor.canvas.defaultCursor = draggingEnabled ? "pointer" : "default";
 
+      // Disable uniform scaling
+      editor.canvas.uniformScaling = false;
+
       fabric.Image.fromURL(
         image.src,
         (img) => {
