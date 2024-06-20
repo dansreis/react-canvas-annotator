@@ -4,7 +4,6 @@ import Board, { BoardActions, BoardProps } from "../Board";
 const Example: FC<BoardProps> = ({ items, image }) => {
   const ref = React.createRef<BoardActions>();
 
-  const [toggleStatus, setToggleStatus] = useState(false);
   const [isDrawingPolygon, setIsDrawingPolygon] = useState(false);
   const [isDrawingRectangle, setIsDrawingRectangle] = useState(false);
   const [currentZoom, setCurrentZoom] = useState<number | undefined>();
@@ -12,9 +11,6 @@ const Example: FC<BoardProps> = ({ items, image }) => {
   return (
     <>
       <div style={{ display: "flex", gap: "10px" }}>
-        <button onClick={() => ref.current?.toggleDragging()}>
-          Toggle Dragging [{toggleStatus ? "ON" : "OFF"}]
-        </button>
         <button onClick={() => ref.current?.resetZoom()}>Reset Zoom</button>
         <button onClick={() => ref.current?.deleteSelectedObjects()}>
           Delete Selected
@@ -69,7 +65,6 @@ const Example: FC<BoardProps> = ({ items, image }) => {
           ref={ref}
           image={image}
           items={items}
-          onToggleDragging={(s) => setToggleStatus(s)}
           onZoomChange={(v) => setCurrentZoom(v)}
         />
       </div>
