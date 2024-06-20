@@ -18,7 +18,6 @@ export type BoardProps = {
   };
   onResetZoom?: () => void;
   onZoomChange?: (currentZoom: number) => void;
-  onToggleDragging?: (currentStatus: boolean) => void;
   onLoadedImage?: ({
     width,
     height,
@@ -29,7 +28,6 @@ export type BoardProps = {
 };
 
 export type BoardActions = {
-  toggleDragging: (value?: boolean) => void;
   resetZoom: () => void;
   deleteSelectedObjects: () => void;
   downloadImage: () => void;
@@ -39,24 +37,11 @@ export type BoardActions = {
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
   (
-    {
-      image,
-      initialStatus,
-      items,
-      onToggleDragging,
-      onResetZoom,
-      onZoomChange,
-      onLoadedImage,
-    },
+    { image, initialStatus, items, onResetZoom, onZoomChange, onLoadedImage },
     ref,
   ) => {
     // Set board actions
     React.useImperativeHandle(ref, () => ({
-      toggleDragging() {
-        const newStatus = !draggingEnabled;
-        setDraggingEnabled(newStatus);
-        onToggleDragging?.(newStatus);
-      },
       resetZoom() {
         editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         setCurrentZoom(100);
@@ -129,10 +114,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       height: 0,
     });
 
-    const [draggingEnabled, setDraggingEnabled] = useState(
-      initialStatus?.draggingEnabled || false,
-    );
-
     const [drawingObject, setDrawingObject] = useState<
       NonNullable<fabricTypes.CanvasAnnotationState["drawingObject"]>
     >({ isDrawing: false, type: "polygon", points: [] });
@@ -165,7 +146,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.setHeight(parentCanvasElement.clientHeight);
 
       // Change the cursor
-      editor.canvas.defaultCursor = draggingEnabled ? "pointer" : "default";
+      // editor.canvas.defaultCursor = draggingEnabled ? "pointer" : "default";
 
       // Disable uniform scaling
       editor.canvas.uniformScaling = false;
@@ -199,7 +180,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:wheel",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
-          // if (this.drawingObject?.isDrawing) return;
           const delta = opt.e.deltaY;
           let zoom = editor.canvas.getZoom();
           zoom *= 0.999 ** delta;
@@ -220,7 +200,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         "mouse:down",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
           const evt = opt.e;
-          this.isDragging = draggingEnabled;
+          this.isDragging = opt.target === null; // Enable dragging when the cursor is on canvas (no object selected)
           this.selection = false;
           this.lastPosX = evt.clientX;
           this.lastPosY = evt.clientY;
@@ -424,14 +404,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       return () => {
         editor.canvas.off();
       };
-    }, [
-      draggingEnabled,
-      editor,
-      image,
-      onLoadedImage,
-      onZoomChange,
-      drawingObject,
-    ]);
+    }, [editor, image, onLoadedImage, onZoomChange, drawingObject]);
 
     // Update zoom parent value
     useEffect(() => {

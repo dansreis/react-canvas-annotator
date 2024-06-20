@@ -120,7 +120,6 @@ All of the following properties can be defined on the `Board` component:
 | `initialStatus`    | `{ draggingEnabled?: boolean; currentZoom?: number; scaleRatio?: number; }` | Initial status settings for dragging, zoom level, and scale ratio.                                | {}            |
 | `onResetZoom`      | `() => void`                                    | Callback function to handle zoom reset action.                                                    |               |
 | `onZoomChange`     | `(currentZoom: number) => void`                 | Callback function triggered when the zoom level changes.                                          |               |
-| `onToggleDragging` | `(currentStatus: boolean) => void`              | Callback function triggered when dragging is toggled.                                             |               |
 | `onLoadedImage`    | `({ width, height }: { width: number; height: number; }) => void` | Callback function triggered when the image has been successfully loaded, providing its dimensions. |               |
 
 *(Properties marked with \* are required)*
