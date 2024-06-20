@@ -195,7 +195,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         },
       );
 
-      // On Mouse right click (down)
+      // On Mouse left click (down)
       editor.canvas.on(
         "mouse:down",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
@@ -276,13 +276,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         },
       );
 
-      // On Mouse right click (up)
+      // On Mouse left click (up)
       editor.canvas.on(
         "mouse:up",
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         function (this: fabricTypes.CanvasAnnotationState, _opt) {
           if (this.isDragging) {
-            // Rese the  viewport
+            // Reset the viewport
             editor.canvas.zoomToPoint(
               { x: _opt.e.offsetX, y: _opt.e.offsetY },
               editor.canvas.getZoom(),
