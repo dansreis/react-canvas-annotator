@@ -5,4 +5,5 @@ export type CanvasObject = {
   value: string;
   coords: { x: number; y: number }[];
   opacity?: number;
+  content?: string;
 };

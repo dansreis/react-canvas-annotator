@@ -87,19 +87,30 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
                 scaleRatio,
               }),
             );
+
+            const content = originalFabricImage?.toDataURL({
+              withoutTransform: true,
+              ...fabricUtils.getBoundingBox(updatedCoords),
+            });
+
             return {
               id: co.name!,
               category: "TODO_category",
               color: "TODO_color",
               value: "TODO_value",
               coords: updatedCoords,
+              content,
             };
           });
         }
         return [];
       },
     }));
+
     const { editor, onReady } = useFabricJSEditor();
+
+    const [originalFabricImage, setOriginalFabricImage] =
+      useState<fabric.Image>();
 
     const [currentZoom, setCurrentZoom] = useState<number>(
       initialStatus?.currentZoom || 100,
@@ -154,6 +165,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       fabric.Image.fromURL(
         image.src,
         (img) => {
+          setOriginalFabricImage(img);
+
           const { canvas } = editor;
           const scaleRatio = Math.min(
             (canvas.width ?? 1) / (img.width ?? 1),
