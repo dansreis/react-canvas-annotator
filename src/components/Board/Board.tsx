@@ -16,7 +16,7 @@ export type BoardProps = {
     currentZoom?: number;
     scaleRatio?: number;
   };
-  helper: (object: CanvasObject, content?: string) => React.ReactNode;
+  helper: (id: string, content?: string) => React.ReactNode;
   onResetZoom?: () => void;
   onZoomChange?: (currentZoom: number) => void;
   onLoadedImage?: ({
@@ -114,21 +114,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
     const { editor, onReady } = useFabricJSEditor();
 
-    // Object with all available items
-    const boardItems = React.useMemo(
-      () =>
-        items.reduce(
-          (acc, obj) => {
-            const id = fabricUtils.toPolygonId(obj.id);
-            obj.id = id;
-            acc[id] = obj;
-            return acc;
-          },
-          {} as { [key: string]: CanvasObject },
-        ),
-      [items],
-    );
-
     const [originalFabricImage, setOriginalFabricImage] =
       useState<fabric.Image>();
 
@@ -191,6 +176,17 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           ...fabricUtils.getBoundingBox(updatedCoords),
         }),
       };
+    };
+
+    const updateObjectHelper = (object?: fabric.Object) => {
+      if (!object) return;
+      const helper = fabricUtils.getObjectHelperCoords(object);
+      setObjectHelper({
+        left: helper.left,
+        top: helper.top,
+        enabled: true,
+        object: object as fabricTypes.CustomObject,
+      });
     };
 
     useEffect(() => {
@@ -345,12 +341,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // On Mouse left click (up)
       editor.canvas.on(
         "mouse:up",
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        function (this: fabricTypes.CanvasAnnotationState, _opt) {
+        function (this: fabricTypes.CanvasAnnotationState, opt) {
           if (this.isDragging) {
             // Reset the viewport
             editor.canvas.zoomToPoint(
-              { x: _opt.e.offsetX, y: _opt.e.offsetY },
+              { x: opt.e.offsetX, y: opt.e.offsetY },
               editor.canvas.getZoom(),
             );
           }
@@ -364,6 +359,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           ) {
             console.log("Draw Rectangle - DOWN");
             resetDrawingObject();
+            updateObjectHelper(opt.target);
           }
         },
       );
@@ -483,13 +479,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         const selected = opt.selected?.[0];
         const isDrawing = this.drawingObject?.isDrawing ?? false;
         if (selected && !isDrawing) {
-          const helper = fabricUtils.getObjectHelperCoords(selected);
-          setObjectHelper({
-            left: helper.left,
-            top: helper.top,
-            enabled: true,
-            object: selected as fabricTypes.CustomObject,
-          });
+          updateObjectHelper(selected);
         }
       };
 
@@ -537,7 +527,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // Clear all objects from canvas
       fabricActions.deleteAll(editor?.canvas);
 
-      for (const [, item] of Object.entries(boardItems)) {
+      for (const item of items) {
         const scaledCoords = item.coords.map((p) =>
           fabricUtils.toScaledCoord({
             cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
@@ -554,9 +544,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           fabric.Polygon,
           scaledCoords,
           {
-            name: item.id,
+            name: fabricUtils.toPolygonId(item.id),
             stroke: item.color,
             fill: `rgba(${parse(item.color).values.join(",")},${item.opacity ?? 0.4})`,
+            ...(item.selectable ? { selectable: true } : {}),
           },
           scaledCoords.length === 4, // Is a rectangle
         );
@@ -598,13 +589,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         // };
         canvas.add(polygon);
       }
-    }, [
-      editor?.canvas,
-      imageSize.width,
-      imageSize.height,
-      boardItems,
-      scaleRatio,
-    ]);
+    }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);
 
     const renderObjectHelper = () => {
       if (
@@ -614,8 +599,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       ) {
         return <></>;
       }
-      const canvasObject = boardItems[objectHelper.object.name];
-      if (canvasObject === undefined) return <></>;
 
       const left = `${objectHelper.left}px`;
       const top = `${objectHelper.top}px`;
@@ -635,7 +618,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               margin: "5px",
             }}
           >
-            {helper(canvasObject, info.content)}
+            {helper(objectHelper.object.name, info.content)}
           </div>
         </div>
       );

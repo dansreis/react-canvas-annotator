@@ -65,7 +65,7 @@ const Example: FC<BoardProps> = ({ items, image }) => {
           ref={ref}
           image={image}
           items={items}
-          helper={(obj, content) => {
+          helper={(id, content) => {
             const processContent = (c?: string) => {
               const startLength = 20;
               const endLength = 20;
@@ -81,10 +81,10 @@ const Example: FC<BoardProps> = ({ items, image }) => {
             };
             return (
               <div>
-                <p>Hello {obj.id}</p>
+                <p>Hello {id}</p>
                 <p>{processContent(content)}</p>
                 <button onClick={() => ref.current?.deselectAll()}>OK</button>
-                <button onClick={() => ref.current?.deleteObjectById(obj.id)}>
+                <button onClick={() => ref.current?.deleteObjectById(id)}>
                   Delete Object
                 </button>
               </div>
