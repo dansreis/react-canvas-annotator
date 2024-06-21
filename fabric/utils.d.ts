@@ -143,3 +143,17 @@ export declare const isCoordInsideCoords: (point: {
         y: number;
     };
 }) => boolean;
+export declare const getBoundingBox: (points: {
+    x: number;
+    y: number;
+}[]) => {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+};
+export declare const getObjectHelperCoords: (obj: fabric.Object) => {
+    left: number;
+    top: number;
+};
+export declare const toPolygonId: (id?: string) => string;
