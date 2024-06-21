@@ -65,6 +65,7 @@ const Example: FC<BoardProps> = ({ items, image }) => {
           ref={ref}
           image={image}
           items={items}
+          helper={(obj) => <div>Hello: {obj.id}</div>}
           onZoomChange={(v) => setCurrentZoom(v)}
         />
       </div>

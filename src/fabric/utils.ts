@@ -344,3 +344,15 @@ export const getBoundingBox = (points: { x: number; y: number }[]) => {
     height: maxY - minY,
   };
 };
+
+export const getObjectHelperCoords = (obj: fabric.Object) => {
+  const boundingRect = obj.getBoundingRect();
+  return {
+    left: boundingRect.left + boundingRect.width,
+    top: boundingRect.top + boundingRect.height,
+  };
+};
+
+export const toPolygonId = (id?: string) => {
+  return `RCA_POLYGON_${id}`;
+};
