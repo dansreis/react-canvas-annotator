@@ -36,6 +36,7 @@ export type BoardActions = {
   downloadImage: () => void;
   drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: () => CanvasObject[];
+  retrieveObjectContent: (id: string) => string | null;
 };
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
@@ -57,6 +58,16 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         setCurrentZoom(100);
         onResetZoom?.();
+      },
+      retrieveObjectContent(id: string) {
+        const polygonId = fabricUtils.toPolygonId(id);
+        if (editor?.canvas) {
+          const obj = fabricUtils.findObjectByName(editor.canvas, polygonId);
+          return obj
+            ? getObjectInfo(obj as fabricTypes.CustomObject).content ?? null
+            : null;
+        }
+        return null;
       },
       deselectAll() {
         editor?.canvas.discardActiveObject();

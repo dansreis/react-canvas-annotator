@@ -42,6 +42,14 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         >
           Retrieve Objects
         </button>
+        <button
+          onClick={() => {
+            const obj = ref.current?.retrieveObjectContent("1");
+            console.log(obj);
+          }}
+        >
+          Show content of: 1
+        </button>
       </div>
       <div style={{ display: "flex", gap: "10px" }}>
         <div
