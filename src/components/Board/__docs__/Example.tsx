@@ -65,6 +65,31 @@ const Example: FC<BoardProps> = ({ items, image }) => {
           ref={ref}
           image={image}
           items={items}
+          helper={(obj, content) => {
+            const processContent = (c?: string) => {
+              const startLength = 20;
+              const endLength = 20;
+              // Check if the string is long enough to be shortened
+              if (!c || c.length <= startLength + endLength) {
+                return content;
+              }
+              const start = c.substring(0, startLength);
+              const end = c.substring(c.length - endLength);
+
+              // Concatenate with ellipsis
+              return `${start}...${end}`;
+            };
+            return (
+              <div>
+                <p>Hello {obj.id}</p>
+                <p>{processContent(content)}</p>
+                <button onClick={() => ref.current?.deselectAll()}>OK</button>
+                <button onClick={() => ref.current?.deleteObjectById(obj.id)}>
+                  Delete Object
+                </button>
+              </div>
+            );
+          }}
           onZoomChange={(v) => setCurrentZoom(v)}
         />
       </div>

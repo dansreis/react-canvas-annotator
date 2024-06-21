@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { fabric } from "fabric";
 import { v4 as uuidv4 } from "uuid";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
@@ -16,6 +16,7 @@ export type BoardProps = {
     currentZoom?: number;
     scaleRatio?: number;
   };
+  helper: (object: CanvasObject, content?: string) => React.ReactNode;
   onResetZoom?: () => void;
   onZoomChange?: (currentZoom: number) => void;
   onLoadedImage?: ({
@@ -30,6 +31,8 @@ export type BoardProps = {
 export type BoardActions = {
   resetZoom: () => void;
   deleteSelectedObjects: () => void;
+  deleteObjectById: (id: string) => void;
+  deselectAll: () => void;
   downloadImage: () => void;
   drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: () => CanvasObject[];
@@ -37,7 +40,15 @@ export type BoardActions = {
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
   (
-    { image, initialStatus, items, onResetZoom, onZoomChange, onLoadedImage },
+    {
+      image,
+      initialStatus,
+      items,
+      onResetZoom,
+      onZoomChange,
+      onLoadedImage,
+      helper,
+    },
     ref,
   ) => {
     // Set board actions
@@ -47,14 +58,24 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         setCurrentZoom(100);
         onResetZoom?.();
       },
+      deselectAll() {
+        editor?.canvas.discardActiveObject();
+      },
       deleteSelectedObjects() {
         const canvas = editor?.canvas;
         if (canvas) fabricActions.deleteSelected(canvas);
       },
+      deleteObjectById(id: string) {
+        const canvas = editor?.canvas;
+        if (canvas) {
+          canvas.discardActiveObject();
+          fabricActions.deleteObjectByName(canvas, id);
+        }
+      },
       drawObject(type?: "rectangle" | "polygon") {
         const isDrawing = !drawingObject?.isDrawing;
         if (isDrawing) {
-          const polygonId = uuidv4();
+          const polygonId = fabricUtils.toPolygonId(uuidv4());
           setDrawingObject({
             id: polygonId,
             type: type ?? "polygon",
@@ -75,31 +96,41 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             fabricUtils.retrieveObjects<fabricTypes.CustomObject>(canvas);
           if (!customObjects) return [];
           return customObjects.map((co) => {
-            const updatedCoordPoints = fabricUtils.pointsInCanvas(co);
-            const updatedCoords = updatedCoordPoints.map((p) =>
-              fabricUtils.toOriginalCoord({
-                cInfo: {
-                  width: canvas.getWidth(),
-                  height: canvas.getHeight(),
-                },
-                iInfo: imageSize,
-                coord: p,
-                scaleRatio,
-              }),
-            );
+            const info = getObjectInfo(co);
+
             return {
               id: co.name!,
               category: "TODO_category",
               color: "TODO_color",
               value: "TODO_value",
-              coords: updatedCoords,
+              coords: info.coords,
+              content: info.content,
             };
           });
         }
         return [];
       },
     }));
+
     const { editor, onReady } = useFabricJSEditor();
+
+    // Object with all available items
+    const boardItems = React.useMemo(
+      () =>
+        items.reduce(
+          (acc, obj) => {
+            const id = fabricUtils.toPolygonId(obj.id);
+            obj.id = id;
+            acc[id] = obj;
+            return acc;
+          },
+          {} as { [key: string]: CanvasObject },
+        ),
+      [items],
+    );
+
+    const [originalFabricImage, setOriginalFabricImage] =
+      useState<fabric.Image>();
 
     const [currentZoom, setCurrentZoom] = useState<number>(
       initialStatus?.currentZoom || 100,
@@ -114,11 +145,18 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       height: 0,
     });
 
+    const [objectHelper, setObjectHelper] = useState<{
+      left: number;
+      top: number;
+      enabled: boolean;
+      object?: fabricTypes.CustomObject;
+    }>({ left: 0, top: 0, enabled: false });
+
     const [drawingObject, setDrawingObject] = useState<
       NonNullable<fabricTypes.CanvasAnnotationState["drawingObject"]>
     >({ isDrawing: false, type: "polygon", points: [] });
 
-    const resetDrawingObject = () => {
+    const resetDrawingObject = useCallback(() => {
       const state: fabricTypes.CanvasAnnotationState["drawingObject"] = {
         isDrawing: false,
         type: "polygon",
@@ -128,6 +166,31 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         editor?.canvas as unknown as fabricTypes.CanvasAnnotationState
       ).drawingObject = state;
       setDrawingObject(state);
+    }, [editor?.canvas]);
+
+    const getObjectInfo = (obj: fabricTypes.CustomObject) => {
+      const width = editor?.canvas.getWidth() ?? 0;
+      const height = editor?.canvas.getHeight() ?? 0;
+      const updatedCoordPoints = fabricUtils.pointsInCanvas(obj);
+      const updatedCoords = updatedCoordPoints.map((p) =>
+        fabricUtils.toOriginalCoord({
+          cInfo: {
+            width,
+            height,
+          },
+          iInfo: imageSize,
+          coord: p,
+          scaleRatio,
+        }),
+      );
+
+      return {
+        coords: updatedCoords,
+        content: originalFabricImage?.toDataURL({
+          withoutTransform: true,
+          ...fabricUtils.getBoundingBox(updatedCoords),
+        }),
+      };
     };
 
     useEffect(() => {
@@ -154,6 +217,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       fabric.Image.fromURL(
         image.src,
         (img) => {
+          setOriginalFabricImage(img);
+
           const { canvas } = editor;
           const scaleRatio = Math.min(
             (canvas.width ?? 1) / (img.width ?? 1),
@@ -190,6 +255,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             zoom,
           );
           setCurrentZoom(zoom * 100);
+          editor.canvas.discardActiveObject();
           opt.e.preventDefault();
           opt.e.stopPropagation();
         },
@@ -376,24 +442,68 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         },
       );
 
-      // Selected Objects
-      editor.canvas.on(
-        "selection:created",
+      // Function to reset the annotator helper
+      const objectEventFunction = function (
+        this: fabricTypes.CanvasAnnotationState,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        function (this: fabricTypes.CanvasAnnotationState, _opt) {
-          // console.log("SELECTED! ", opt.selected?.[0]);
+        _opt: fabric.IEvent<MouseEvent>,
+      ) {
+        // While object is being moved, remove the annotator helper
+        setObjectHelper({ ...objectHelper, enabled: false });
+      };
+
+      // While object is being transformed
+      editor.canvas.on("object:moving", objectEventFunction);
+      editor.canvas.on("object:scaling", objectEventFunction);
+      editor.canvas.on("object:resizing", objectEventFunction);
+      editor.canvas.on("object:rotating", objectEventFunction);
+
+      // Objects Modified - When object ends being modified (moved, scaled, resized..), call function
+      editor.canvas.on(
+        "object:modified",
+        function (this: fabricTypes.CanvasAnnotationState, opt) {
+          const obj = opt.target;
+          if (obj) {
+            const helper = fabricUtils.getObjectHelperCoords(obj);
+            setObjectHelper({
+              left: helper.left,
+              top: helper.top,
+              enabled: true,
+              object: obj as fabricTypes.CustomObject,
+            });
+          }
         },
       );
 
-      // Objects Moving
+      const onSelectionEvent = function (
+        this: fabricTypes.CanvasAnnotationState,
+        opt: fabric.IEvent<MouseEvent>,
+      ) {
+        setObjectHelper({ ...objectHelper, enabled: false });
+        const selected = opt.selected?.[0];
+        const isDrawing = this.drawingObject?.isDrawing ?? false;
+        if (selected && !isDrawing) {
+          const helper = fabricUtils.getObjectHelperCoords(selected);
+          setObjectHelper({
+            left: helper.left,
+            top: helper.top,
+            enabled: true,
+            object: selected as fabricTypes.CustomObject,
+          });
+        }
+      };
+
+      // Some element was selected
+      editor.canvas.on("selection:created", onSelectionEvent);
+      editor.canvas.on("selection:updated", onSelectionEvent);
+
+      // On object selection cleared
       editor.canvas.on(
-        "object:modified",
+        "selection:cleared",
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         function (this: fabricTypes.CanvasAnnotationState, _opt) {
-          const obj = _opt.target as fabricTypes.CustomObject | undefined;
-          if (obj) {
-            console.log(`Object ["${obj.name}"] modified event`);
-          }
+          // const selectedObject = opt.deselected?.[0];
+          setObjectHelper({ enabled: false, top: 0, left: 0 });
         },
       );
 
@@ -404,7 +514,15 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       return () => {
         editor.canvas.off();
       };
-    }, [editor, image, onLoadedImage, onZoomChange, drawingObject]);
+    }, [
+      editor,
+      image,
+      onLoadedImage,
+      onZoomChange,
+      drawingObject,
+      resetDrawingObject,
+      objectHelper,
+    ]);
 
     // Update zoom parent value
     useEffect(() => {
@@ -419,7 +537,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // Clear all objects from canvas
       fabricActions.deleteAll(editor?.canvas);
 
-      for (const item of items) {
+      for (const [, item] of Object.entries(boardItems)) {
         const scaledCoords = item.coords.map((p) =>
           fabricUtils.toScaledCoord({
             cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
@@ -436,59 +554,101 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           fabric.Polygon,
           scaledCoords,
           {
-            name: `ID_${item.id}`,
+            name: item.id,
             stroke: item.color,
             fill: `rgba(${parse(item.color).values.join(",")},${item.opacity ?? 0.4})`,
           },
           scaledCoords.length === 4, // Is a rectangle
         );
+
+        // const renderIcon = (
+        //   ctx: CanvasRenderingContext2D,
+        //   left: number,
+        //   top: number,
+        //   styleOverride: unknown,
+        //   fabricObject: fabric.Object,
+        // ) => {
+        //   const deleteIcon =
+        //     "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
+
+        //   const img = document.createElement("img");
+        //   img.src = deleteIcon;
+        //   const size = 24;
+        //   ctx.save();
+        //   ctx.translate(left, top);
+        //   if (fabricObject.angle)
+        //     ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+        //   ctx.drawImage(img, -size / 2, -size / 2, size, size);
+        //   ctx.restore();
+        // };
+
+        // polygon.controls = {
+        //   ...polygon.controls,
+        //   onDelete: new fabric.Control({
+        //     x: 0.5,
+        //     y: -0.5,
+        //     offsetY: 16,
+        //     cursorStyle: "pointer",
+        //     mouseUpHandler: () => {
+        //       console.log("deleted up!");
+        //       return true;
+        //     },
+        //     render: renderIcon,
+        //   }),
+        // };
         canvas.add(polygon);
       }
-    }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);
+    }, [
+      editor?.canvas,
+      imageSize.width,
+      imageSize.height,
+      boardItems,
+      scaleRatio,
+    ]);
 
-    //   const renderIcon = (
-    //     ctx: CanvasRenderingContext2D,
-    //     left: number,
-    //     top: number,
-    //     styleOverride: unknown,
-    //     fabricObject: fabric.Object,
-    //   ) => {
-    //     const deleteIcon =
-    //       "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
+    const renderObjectHelper = () => {
+      if (
+        !helper ||
+        objectHelper.object?.name === undefined ||
+        objectHelper.enabled === false
+      ) {
+        return <></>;
+      }
+      const canvasObject = boardItems[objectHelper.object.name];
+      if (canvasObject === undefined) return <></>;
 
-    //     const img = document.createElement("img");
-    //     img.src = deleteIcon;
-    //     const size = 24;
-    //     ctx.save();
-    //     ctx.translate(left, top);
-    //     if (fabricObject.angle)
-    //       ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
-    //     ctx.drawImage(img, -size / 2, -size / 2, size, size);
-    //     ctx.restore();
-    //   };
-
-    //   rect.controls = {
-    //     onDelete: new fabric.Control({
-    //       x: 0.5,
-    //       y: -0.5,
-    //       offsetY: 16,
-    //       cursorStyle: "pointer",
-    //       mouseUpHandler: () => onDelete(),
-    //       render: renderIcon,
-    //     }),
-    //   };
-
-    //   editor?.canvas.add(rect);
-    //   // setAction({ primitive: "rectangle", operation: "add" });
-    // };
+      const left = `${objectHelper.left}px`;
+      const top = `${objectHelper.top}px`;
+      const info = getObjectInfo(objectHelper.object);
+      return (
+        <div
+          id="react-annotator-canvas-helper"
+          style={{
+            position: "absolute",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              left,
+              top,
+              margin: "5px",
+            }}
+          >
+            {helper(canvasObject, info.content)}
+          </div>
+        </div>
+      );
+    };
 
     return (
       <div
         id="react-annotator-canvas"
         data-testid="react-annotator-canvas"
-        style={{ width: "100%", height: "100%" }}
+        style={{ display: "flex", width: "100%", height: "100%" }}
       >
         <FabricJSCanvas className="fabricjs-canvas" onReady={onReady} />
+        {renderObjectHelper()}
       </div>
     );
   },
