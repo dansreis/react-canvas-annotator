@@ -16,7 +16,7 @@ export type BoardProps = {
     currentZoom?: number;
     scaleRatio?: number;
   };
-  helper: (object: CanvasObject) => React.ReactNode;
+  helper: (object: CanvasObject, content?: string) => React.ReactNode;
   onResetZoom?: () => void;
   onZoomChange?: (currentZoom: number) => void;
   onLoadedImage?: ({
@@ -31,6 +31,8 @@ export type BoardProps = {
 export type BoardActions = {
   resetZoom: () => void;
   deleteSelectedObjects: () => void;
+  deleteObjectById: (id: string) => void;
+  deselectAll: () => void;
   downloadImage: () => void;
   drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: () => CanvasObject[];
@@ -56,9 +58,19 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         setCurrentZoom(100);
         onResetZoom?.();
       },
+      deselectAll() {
+        editor?.canvas.discardActiveObject();
+      },
       deleteSelectedObjects() {
         const canvas = editor?.canvas;
         if (canvas) fabricActions.deleteSelected(canvas);
+      },
+      deleteObjectById(id: string) {
+        const canvas = editor?.canvas;
+        if (canvas) {
+          canvas.discardActiveObject();
+          fabricActions.deleteObjectByName(canvas, id);
+        }
       },
       drawObject(type?: "rectangle" | "polygon") {
         const isDrawing = !drawingObject?.isDrawing;
@@ -84,31 +96,15 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             fabricUtils.retrieveObjects<fabricTypes.CustomObject>(canvas);
           if (!customObjects) return [];
           return customObjects.map((co) => {
-            const updatedCoordPoints = fabricUtils.pointsInCanvas(co);
-            const updatedCoords = updatedCoordPoints.map((p) =>
-              fabricUtils.toOriginalCoord({
-                cInfo: {
-                  width: canvas.getWidth(),
-                  height: canvas.getHeight(),
-                },
-                iInfo: imageSize,
-                coord: p,
-                scaleRatio,
-              }),
-            );
-
-            const content = originalFabricImage?.toDataURL({
-              withoutTransform: true,
-              ...fabricUtils.getBoundingBox(updatedCoords),
-            });
+            const info = getObjectInfo(co);
 
             return {
               id: co.name!,
               category: "TODO_category",
               color: "TODO_color",
               value: "TODO_value",
-              coords: updatedCoords,
-              content,
+              coords: info.coords,
+              content: info.content,
             };
           });
         }
@@ -153,7 +149,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       left: number;
       top: number;
       enabled: boolean;
-      itemId?: string;
+      object?: fabricTypes.CustomObject;
     }>({ left: 0, top: 0, enabled: false });
 
     const [drawingObject, setDrawingObject] = useState<
@@ -171,6 +167,31 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       ).drawingObject = state;
       setDrawingObject(state);
     }, [editor?.canvas]);
+
+    const getObjectInfo = (obj: fabricTypes.CustomObject) => {
+      const width = editor?.canvas.getWidth() ?? 0;
+      const height = editor?.canvas.getHeight() ?? 0;
+      const updatedCoordPoints = fabricUtils.pointsInCanvas(obj);
+      const updatedCoords = updatedCoordPoints.map((p) =>
+        fabricUtils.toOriginalCoord({
+          cInfo: {
+            width,
+            height,
+          },
+          iInfo: imageSize,
+          coord: p,
+          scaleRatio,
+        }),
+      );
+
+      return {
+        coords: updatedCoords,
+        content: originalFabricImage?.toDataURL({
+          withoutTransform: true,
+          ...fabricUtils.getBoundingBox(updatedCoords),
+        }),
+      };
+    };
 
     useEffect(() => {
       const parentCanvasElement = document.getElementById(
@@ -448,7 +469,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               left: helper.left,
               top: helper.top,
               enabled: true,
-              itemId: obj.name,
+              object: obj as fabricTypes.CustomObject,
             });
           }
         },
@@ -467,7 +488,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             left: helper.left,
             top: helper.top,
             enabled: true,
-            itemId: selected.name,
+            object: selected as fabricTypes.CustomObject,
           });
         }
       };
@@ -588,16 +609,17 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     const renderObjectHelper = () => {
       if (
         !helper ||
-        objectHelper.itemId === undefined ||
+        objectHelper.object?.name === undefined ||
         objectHelper.enabled === false
       ) {
         return <></>;
       }
-      const canvasObject = boardItems[objectHelper.itemId];
+      const canvasObject = boardItems[objectHelper.object.name];
+      if (canvasObject === undefined) return <></>;
+
       const left = `${objectHelper.left}px`;
       const top = `${objectHelper.top}px`;
-
-      if (canvasObject === undefined) return <></>;
+      const info = getObjectInfo(objectHelper.object);
       return (
         <div
           id="react-annotator-canvas-helper"
@@ -613,7 +635,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               margin: "5px",
             }}
           >
-            {helper(canvasObject)}
+            {helper(canvasObject, info.content)}
           </div>
         </div>
       );
