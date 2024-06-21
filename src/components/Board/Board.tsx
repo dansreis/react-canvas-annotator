@@ -547,7 +547,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             name: fabricUtils.toPolygonId(item.id),
             stroke: item.color,
             fill: `rgba(${parse(item.color).values.join(",")},${item.opacity ?? 0.4})`,
-            ...(item.selectable ? { selectable: true } : {}),
+            selectable: item.selectable ?? true,
           },
           scaledCoords.length === 4, // Is a rectangle
         );
