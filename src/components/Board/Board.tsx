@@ -16,7 +16,7 @@ export type BoardProps = {
     currentZoom?: number;
     scaleRatio?: number;
   };
-  helper: (object: CanvasObject, content?: string) => React.ReactNode;
+  helper: (id: string, content?: string) => React.ReactNode;
   onResetZoom?: () => void;
   onZoomChange?: (currentZoom: number) => void;
   onLoadedImage?: ({
@@ -113,21 +113,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     }));
 
     const { editor, onReady } = useFabricJSEditor();
-
-    // Object with all available items
-    const boardItems = React.useMemo(
-      () =>
-        items.reduce(
-          (acc, obj) => {
-            const id = fabricUtils.toPolygonId(obj.id);
-            obj.id = id;
-            acc[id] = obj;
-            return acc;
-          },
-          {} as { [key: string]: CanvasObject },
-        ),
-      [items],
-    );
 
     const [originalFabricImage, setOriginalFabricImage] =
       useState<fabric.Image>();
@@ -537,7 +522,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // Clear all objects from canvas
       fabricActions.deleteAll(editor?.canvas);
 
-      for (const [, item] of Object.entries(boardItems)) {
+      for (const item of items) {
         const scaledCoords = item.coords.map((p) =>
           fabricUtils.toScaledCoord({
             cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
@@ -554,9 +539,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           fabric.Polygon,
           scaledCoords,
           {
-            name: item.id,
+            name: fabricUtils.toPolygonId(item.id),
             stroke: item.color,
             fill: `rgba(${parse(item.color).values.join(",")},${item.opacity ?? 0.4})`,
+            ...(item.selectable ? { selectable: true } : {}),
           },
           scaledCoords.length === 4, // Is a rectangle
         );
@@ -598,13 +584,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         // };
         canvas.add(polygon);
       }
-    }, [
-      editor?.canvas,
-      imageSize.width,
-      imageSize.height,
-      boardItems,
-      scaleRatio,
-    ]);
+    }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);
 
     const renderObjectHelper = () => {
       if (
@@ -614,8 +594,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       ) {
         return <></>;
       }
-      const canvasObject = boardItems[objectHelper.object.name];
-      if (canvasObject === undefined) return <></>;
 
       const left = `${objectHelper.left}px`;
       const top = `${objectHelper.top}px`;
@@ -635,7 +613,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               margin: "5px",
             }}
           >
-            {helper(canvasObject, info.content)}
+            {helper(objectHelper.object.name, info.content)}
           </div>
         </div>
       );
