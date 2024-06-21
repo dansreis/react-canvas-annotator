@@ -178,6 +178,17 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       };
     };
 
+    const updateObjectHelper = (object?: fabric.Object) => {
+      if (!object) return;
+      const helper = fabricUtils.getObjectHelperCoords(object);
+      setObjectHelper({
+        left: helper.left,
+        top: helper.top,
+        enabled: true,
+        object: object as fabricTypes.CustomObject,
+      });
+    };
+
     useEffect(() => {
       const parentCanvasElement = document.getElementById(
         "react-annotator-canvas",
@@ -330,12 +341,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // On Mouse left click (up)
       editor.canvas.on(
         "mouse:up",
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        function (this: fabricTypes.CanvasAnnotationState, _opt) {
+        function (this: fabricTypes.CanvasAnnotationState, opt) {
           if (this.isDragging) {
             // Reset the viewport
             editor.canvas.zoomToPoint(
-              { x: _opt.e.offsetX, y: _opt.e.offsetY },
+              { x: opt.e.offsetX, y: opt.e.offsetY },
               editor.canvas.getZoom(),
             );
           }
@@ -349,6 +359,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           ) {
             console.log("Draw Rectangle - DOWN");
             resetDrawingObject();
+            updateObjectHelper(opt.target);
           }
         },
       );
@@ -468,13 +479,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         const selected = opt.selected?.[0];
         const isDrawing = this.drawingObject?.isDrawing ?? false;
         if (selected && !isDrawing) {
-          const helper = fabricUtils.getObjectHelperCoords(selected);
-          setObjectHelper({
-            left: helper.left,
-            top: helper.top,
-            enabled: true,
-            object: selected as fabricTypes.CustomObject,
-          });
+          updateObjectHelper(selected);
         }
       };
 
