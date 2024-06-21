@@ -245,7 +245,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           canvas!.renderAll();
           onLoadedImage?.({ width: img.width ?? 0, height: img.height ?? 0 });
         },
-        { selectable: false },
+        { selectable: false, crossOrigin: "anonymous" },
       );
 
       // On Wheel interation/move
