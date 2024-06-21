@@ -10,9 +10,7 @@ const meta: Meta<typeof Example> = {
 const ITEMS: CanvasObject[] = [
   {
     id: "1",
-    category: "category1",
     color: "green",
-    value: "⌀42",
     coords: [
       {
         x: 133,
@@ -34,9 +32,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "2",
-    category: "category2",
     color: "green",
-    value: "38",
     coords: [
       {
         x: 150,
@@ -58,9 +54,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "3",
-    category: "category3",
     color: "green",
-    value: "9",
     coords: [
       {
         x: 235,
@@ -82,9 +76,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "4",
-    category: "category4",
     color: "green",
-    value: "⌀38",
     coords: [
       {
         x: 481,
@@ -106,9 +98,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "5",
-    category: "category5",
     color: "green",
-    value: "(25.5)",
     coords: [
       {
         x: 1370,
@@ -130,9 +120,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "6",
-    category: "category6",
     color: "green",
-    value: "1x45°",
     coords: [
       {
         x: 732,
@@ -154,9 +142,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "7",
-    category: "category7",
     color: "green",
-    value: "1x45°",
     coords: [
       {
         x: 740,
@@ -178,9 +164,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "8",
-    category: "category8",
     color: "green",
-    value: "16",
     coords: [
       {
         x: 943,
@@ -202,9 +186,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "9",
-    category: "category9",
     color: "green",
-    value: "45.0°",
     coords: [
       {
         x: 821,
@@ -226,9 +208,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "10",
-    category: "category10",
     color: "green",
-    value: "⌀21.5±0.1",
     coords: [
       {
         x: 943,
@@ -250,9 +230,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "11",
-    category: "category11",
     color: "green",
-    value: "60.0°",
     coords: [
       {
         x: 925,
@@ -274,9 +252,7 @@ const ITEMS: CanvasObject[] = [
   },
   {
     id: "12",
-    category: "category12",
     color: "green",
-    value: "⌀38H12",
     coords: [
       {
         x: 1317,
