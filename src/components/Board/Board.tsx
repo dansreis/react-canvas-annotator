@@ -26,6 +26,7 @@ export type BoardProps = {
     width: number;
     height: number;
   }) => void;
+  onItemHover?: ({ id }: { id: string | null }) => void;
 };
 
 export type BoardActions = {
@@ -48,6 +49,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       onResetZoom,
       onZoomChange,
       onLoadedImage,
+      onItemHover,
       helper,
     },
     ref,
@@ -508,6 +510,19 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         },
       );
 
+      editor.canvas.on("mouse:over", (opt) => {
+        const target = opt.target;
+        if (target && onItemHover) {
+          onItemHover({ id: target.name! });
+        }
+      });
+      editor.canvas.on("mouse:out", (opt) => {
+        const target = opt.target;
+        if (target && onItemHover) {
+          onItemHover({ id: null });
+        }
+      });
+
       editor.canvas.renderAll();
 
       // TODO: Need to verify this
@@ -523,6 +538,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       drawingObject,
       resetDrawingObject,
       objectHelper,
+      onItemHover,
     ]);
 
     // Update zoom parent value
