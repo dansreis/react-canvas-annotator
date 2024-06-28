@@ -62,9 +62,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         onResetZoom?.();
       },
       retrieveObjectContent(id: string) {
-        const polygonId = fabricUtils.toPolygonId(id);
         if (editor?.canvas) {
-          const obj = fabricUtils.findObjectByName(editor.canvas, polygonId);
+          const obj = fabricUtils.findObjectByName(editor.canvas, id);
           return obj
             ? getObjectInfo(obj as fabricTypes.CustomObject).content ?? null
             : null;
@@ -88,7 +87,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       drawObject(type?: "rectangle" | "polygon") {
         const isDrawing = !drawingObject?.isDrawing;
         if (isDrawing) {
-          const polygonId = fabricUtils.toPolygonId(uuidv4());
+          const polygonId = uuidv4();
           setDrawingObject({
             id: polygonId,
             type: type ?? "polygon",
@@ -571,7 +570,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           fabric.Polygon,
           scaledCoords,
           {
-            name: fabricUtils.toPolygonId(item.id),
+            name: item.id,
             stroke: item.color,
             fill: `rgba(${parse(item.color).values.join(",")},${item.opacity ?? 0.4})`,
             selectable: item.selectable ?? true,

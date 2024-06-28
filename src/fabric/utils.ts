@@ -352,7 +352,3 @@ export const getObjectHelperCoords = (obj: fabric.Object) => {
     top: boundingRect.top + boundingRect.height,
   };
 };
-
-export const toPolygonId = (id?: string) => {
-  return `RCA_POLYGON_${id}`;
-};
