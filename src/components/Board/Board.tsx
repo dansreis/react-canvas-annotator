@@ -566,6 +566,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           }),
         );
 
+        const selectable = item.selectable ?? true;
         const polygon = fabricUtils.createControllableCustomObject(
           fabric.Polygon,
           scaledCoords,
@@ -573,7 +574,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             name: item.id,
             stroke: item.color,
             fill: `rgba(${parse(item.color).values.join(",")},${item.opacity ?? 0.4})`,
-            selectable: item.selectable ?? true,
+            selectable,
+            hoverCursor: item.hoverCursor,
+            moveCursor: item.moveCursor,
           },
           scaledCoords.length === 4, // Is a rectangle
         );
