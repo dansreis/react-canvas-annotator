@@ -4,5 +4,6 @@ export type CanvasObject = {
   selectable?: boolean;
   coords: { x: number; y: number }[];
   opacity?: number;
+  toolip?: React.ReactNode;
   content?: string;
 };

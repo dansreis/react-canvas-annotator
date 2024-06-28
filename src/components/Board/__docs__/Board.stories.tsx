@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import Example from "./Example";
 import { CanvasObject } from "../types";
+import React from "react";
 
 const meta: Meta<typeof Example> = {
   title: "Board",
@@ -11,6 +12,7 @@ const ITEMS: CanvasObject[] = [
   {
     id: "1",
     color: "green",
+    toolip: <p>1</p>,
     coords: [
       {
         x: 133,

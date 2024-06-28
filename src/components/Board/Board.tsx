@@ -60,9 +60,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         onResetZoom?.();
       },
       retrieveObjectContent(id: string) {
-        const polygonId = fabricUtils.toPolygonId(id);
         if (editor?.canvas) {
-          const obj = fabricUtils.findObjectByName(editor.canvas, polygonId);
+          const obj = fabricUtils.findObjectByName(editor.canvas, id);
           return obj
             ? getObjectInfo(obj as fabricTypes.CustomObject).content ?? null
             : null;
@@ -86,7 +85,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       drawObject(type?: "rectangle" | "polygon") {
         const isDrawing = !drawingObject?.isDrawing;
         if (isDrawing) {
-          const polygonId = fabricUtils.toPolygonId(uuidv4());
+          const polygonId = uuidv4();
           setDrawingObject({
             id: polygonId,
             type: type ?? "polygon",
@@ -127,6 +126,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
     const [originalFabricImage, setOriginalFabricImage] =
       useState<fabric.Image>();
+
+    const [onScreenObjects, setOnScreenObjects] = useState<fabric.Object[]>([]);
 
     const [currentZoom, setCurrentZoom] = useState<number>(
       initialStatus?.currentZoom || 100,
@@ -508,6 +509,18 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         },
       );
 
+      // Update canvas objects after render
+      editor.canvas.on(
+        "after:render",
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        function (this: fabricTypes.CanvasAnnotationState, _opt) {
+          const objs = editor?.canvas
+            .getObjects()
+            .filter((o) => o.isOnScreen());
+          setOnScreenObjects(objs);
+        },
+      );
+
       editor.canvas.renderAll();
 
       // TODO: Need to verify this
@@ -555,7 +568,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           fabric.Polygon,
           scaledCoords,
           {
-            name: fabricUtils.toPolygonId(item.id),
+            name: item.id,
             stroke: item.color,
             fill: `rgba(${parse(item.color).values.join(",")},${item.opacity ?? 0.4})`,
             selectable: item.selectable ?? true,
@@ -563,44 +576,40 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           scaledCoords.length === 4, // Is a rectangle
         );
 
-        // const renderIcon = (
-        //   ctx: CanvasRenderingContext2D,
-        //   left: number,
-        //   top: number,
-        //   styleOverride: unknown,
-        //   fabricObject: fabric.Object,
-        // ) => {
-        //   const deleteIcon =
-        //     "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
-
-        //   const img = document.createElement("img");
-        //   img.src = deleteIcon;
-        //   const size = 24;
-        //   ctx.save();
-        //   ctx.translate(left, top);
-        //   if (fabricObject.angle)
-        //     ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
-        //   ctx.drawImage(img, -size / 2, -size / 2, size, size);
-        //   ctx.restore();
-        // };
-
-        // polygon.controls = {
-        //   ...polygon.controls,
-        //   onDelete: new fabric.Control({
-        //     x: 0.5,
-        //     y: -0.5,
-        //     offsetY: 16,
-        //     cursorStyle: "pointer",
-        //     mouseUpHandler: () => {
-        //       console.log("deleted up!");
-        //       return true;
-        //     },
-        //     render: renderIcon,
-        //   }),
-        // };
         canvas.add(polygon);
       }
     }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);
+
+    // Objects are being correctly updated. However, the move/move of stuff, is not
+    const renderObjectsTooltip = () => {
+      return onScreenObjects.map((o) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+        const coords = o.oCoords?.mt!;
+        console.log(coords);
+        const left = `${coords.x}px`;
+        const top = `${coords.y}px`;
+        return (
+          <div
+            id={`react-annotator-canvas-tooltip-${o.name}`}
+            key={o.name}
+            style={{
+              position: "absolute",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                left,
+                top,
+                margin: "5px",
+              }}
+            >
+              <p>1</p>
+            </div>
+          </div>
+        );
+      });
+    };
 
     const renderObjectHelper = () => {
       if (
@@ -643,6 +652,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       >
         <FabricJSCanvas className="fabricjs-canvas" onReady={onReady} />
         {renderObjectHelper()}
+        {renderObjectsTooltip()}
       </div>
     );
   },
