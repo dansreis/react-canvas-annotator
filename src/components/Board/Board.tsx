@@ -36,7 +36,7 @@ export type BoardActions = {
   deselectAll: () => void;
   downloadImage: () => void;
   drawObject: (type?: "rectangle" | "polygon") => void;
-  retrieveObjects: () => CanvasObject[];
+  retrieveObjects: (includeContent?: boolean) => CanvasObject[];
   retrieveObjectContent: (id: string) => string | null;
 };
 
@@ -101,14 +101,14 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       downloadImage() {
         fabricActions.canvasImageDownload(image);
       },
-      retrieveObjects: () => {
+      retrieveObjects: (includeContent: boolean = true) => {
         const canvas = editor?.canvas;
         if (canvas) {
           const customObjects =
             fabricUtils.retrieveObjects<fabricTypes.CustomObject>(canvas);
           if (!customObjects) return [];
           return customObjects.map((co) => {
-            const info = getObjectInfo(co);
+            const info = getObjectInfo(co, includeContent);
 
             return {
               id: co.name!,
@@ -165,7 +165,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       setDrawingObject(state);
     }, [editor?.canvas]);
 
-    const getObjectInfo = (obj: fabricTypes.CustomObject) => {
+    const getObjectInfo = (
+      obj: fabricTypes.CustomObject,
+      includeContent = true,
+    ) => {
       const width = editor?.canvas.getWidth() ?? 0;
       const height = editor?.canvas.getHeight() ?? 0;
       const updatedCoordPoints = fabricUtils.pointsInCanvas(obj);
@@ -183,10 +186,12 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
       return {
         coords: updatedCoords,
-        content: originalFabricImage?.toDataURL({
-          withoutTransform: true,
-          ...fabricUtils.getBoundingBox(updatedCoords),
-        }),
+        content: includeContent
+          ? originalFabricImage?.toDataURL({
+              withoutTransform: true,
+              ...fabricUtils.getBoundingBox(updatedCoords),
+            })
+          : undefined,
       };
     };
 
