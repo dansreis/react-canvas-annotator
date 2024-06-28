@@ -51,6 +51,7 @@ export type CanvasAnnotationState = {
   drawingObject?: {
     id?: string;
     type: "polygon" | "rectangle";
+    cursor?: CursorType;
     isDrawing: boolean;
     points: { x: number; y: number }[];
   };

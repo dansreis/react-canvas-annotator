@@ -17,7 +17,7 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         </button>
         <button
           onClick={() => {
-            ref.current?.drawObject();
+            ref.current?.drawObject("polygon", "cell");
             setIsDrawingPolygon(!isDrawingPolygon);
           }}
         >
@@ -25,7 +25,7 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         </button>
         <button
           onClick={() => {
-            ref.current?.drawObject("rectangle");
+            ref.current?.drawObject("rectangle", "crosshair");
             setIsDrawingRectangle(!isDrawingRectangle);
           }}
         >

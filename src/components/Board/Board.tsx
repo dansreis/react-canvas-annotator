@@ -35,7 +35,10 @@ export type BoardActions = {
   deleteObjectById: (id: string) => void;
   deselectAll: () => void;
   downloadImage: () => void;
-  drawObject: (type?: "rectangle" | "polygon") => void;
+  drawObject: (
+    type?: "rectangle" | "polygon",
+    cursor?: fabricTypes.CursorType,
+  ) => void;
   retrieveObjects: (includeContent?: boolean) => CanvasObject[];
   retrieveObjectContent: (id: string) => string | null;
 };
@@ -84,7 +87,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           fabricActions.deleteObjectByName(canvas, id);
         }
       },
-      drawObject(type?: "rectangle" | "polygon") {
+      drawObject(type?: "rectangle" | "polygon", cursor = "default") {
         const isDrawing = !drawingObject?.isDrawing;
         if (isDrawing) {
           const polygonId = uuidv4();
@@ -92,6 +95,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             id: polygonId,
             type: type ?? "polygon",
             isDrawing: true,
+            cursor,
             points: [],
           });
         } else {
@@ -401,56 +405,58 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             }
           }
 
-          if (isDrawingObject && drawingObjectType === "polygon") {
-            const newPoints = drawingObject.points.concat({
-              x: pointer.x,
-              y: pointer.y,
-            });
+          if (isDrawingObject) {
+            if (drawingObjectType === "polygon") {
+              const newPoints = drawingObject.points.concat({
+                x: pointer.x,
+                y: pointer.y,
+              });
 
-            const polygon = fabricUtils.findObjectByName(
-              editor.canvas,
-              drawingObject.id,
-            );
+              const polygon = fabricUtils.findObjectByName(
+                editor.canvas,
+                drawingObject.id,
+              );
 
-            if (polygon) editor.canvas.remove(polygon);
+              if (polygon) editor.canvas.remove(polygon);
 
-            // Draw a new polygon from scratch
-            const newPolygon = fabricUtils.createControllableCustomObject(
-              fabric.Polyline,
-              newPoints,
-              { name: drawingObject.id },
-            );
+              // Draw a new polygon from scratch
+              const newPolygon = fabricUtils.createControllableCustomObject(
+                fabric.Polyline,
+                newPoints,
+                { name: drawingObject.id },
+              );
 
-            // Add object to canvas and set it as ACTIVE
-            editor.canvas.add(newPolygon);
-            editor.canvas.setActiveObject(newPolygon);
-          } else if (isDrawingObject && drawingObjectType === "rectangle") {
-            const rectangle = fabricUtils.findObjectByName(
-              editor.canvas,
-              drawingObject.id,
-            );
+              // Add object to canvas and set it as ACTIVE
+              editor.canvas.add(newPolygon);
+              editor.canvas.setActiveObject(newPolygon);
+            } else if (drawingObjectType === "rectangle") {
+              const rectangle = fabricUtils.findObjectByName(
+                editor.canvas,
+                drawingObject.id,
+              );
 
-            if (rectangle) editor.canvas.remove(rectangle);
+              if (rectangle) editor.canvas.remove(rectangle);
 
-            if (!this.lastClickCoords) return;
+              if (!this.lastClickCoords) return;
 
-            const newPoints = [
-              { x: this.lastClickCoords?.x, y: this.lastClickCoords?.y },
-              { x: pointer.x, y: this.lastClickCoords?.y },
-              { x: pointer.x, y: pointer.y },
-              { x: this.lastClickCoords?.x, y: pointer.y },
-            ];
-            // Draw a new rectangle from scratch
-            const newRectangle = fabricUtils.createControllableCustomObject(
-              fabric.Polygon,
-              newPoints,
-              { name: drawingObject.id },
-              true,
-            );
+              const newPoints = [
+                { x: this.lastClickCoords?.x, y: this.lastClickCoords?.y },
+                { x: pointer.x, y: this.lastClickCoords?.y },
+                { x: pointer.x, y: pointer.y },
+                { x: this.lastClickCoords?.x, y: pointer.y },
+              ];
+              // Draw a new rectangle from scratch
+              const newRectangle = fabricUtils.createControllableCustomObject(
+                fabric.Polygon,
+                newPoints,
+                { name: drawingObject.id },
+                true,
+              );
 
-            // // Add object to canvas and set it as ACTIVE
-            editor.canvas.add(newRectangle);
-            editor.canvas.setActiveObject(newRectangle);
+              // // Add object to canvas and set it as ACTIVE
+              editor.canvas.add(newRectangle);
+              editor.canvas.setActiveObject(newRectangle);
+            }
           }
         },
       );
