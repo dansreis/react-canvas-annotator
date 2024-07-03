@@ -287,7 +287,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           this.selection = false;
           this.lastPosX = evt.clientX;
           this.lastPosY = evt.clientY;
-          this.drawingObject = drawingObject;
 
           // Extract coords for polygon drawing
           const pointer = editor?.canvas.getPointer(opt.e);
@@ -395,9 +394,17 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:move",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
+          // Set the drawing object
+          this.drawingObject = drawingObject;
+
           const isDrawingObject = this.drawingObject?.isDrawing;
           const drawingObjectType = this.drawingObject?.type;
           const pointer = editor?.canvas.getPointer(opt.e);
+
+          // Set the cursor
+          if (this.drawingObject.isDrawing) {
+            editor.canvas.setCursor("cell");
+          }
 
           if (this.isDragging && !isDrawingObject) {
             const e = opt.e;

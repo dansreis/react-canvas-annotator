@@ -49,10 +49,10 @@ export type CanvasAnnotationState = {
   lastClickCoords?: { x: number; y: number };
 
   drawingObject?: {
+    isDrawing: boolean;
     id?: string;
     type: "polygon" | "rectangle";
     cursor?: CursorType;
-    isDrawing: boolean;
     points: { x: number; y: number }[];
   };
 };
