@@ -184,15 +184,51 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         }),
       );
 
+      const rotatedBase64 = rotateBase64Image(
+        originalFabricImage?.toDataURL({
+          withoutTransform: true,
+          ...fabricUtils.getBoundingBox(updatedCoords),
+        }) ?? "",
+        obj.angle ?? 0,
+      );
       return {
         coords: updatedCoords,
-        content: includeContent
-          ? originalFabricImage?.toDataURL({
-              withoutTransform: true,
-              ...fabricUtils.getBoundingBox(updatedCoords),
-            })
-          : undefined,
+        content: includeContent ? rotatedBase64 : undefined,
       };
+    };
+
+    const rotateBase64Image = async (base64data: string, angle: number) => {
+      return await new Promise((resolve) => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d")!;
+        const image = new Image();
+
+        image.src = base64data;
+
+        image.onload = () => {
+          const radians = -(angle * Math.PI) / 180;
+          const sin = Math.sin(radians);
+          const cos = Math.cos(radians);
+
+          // Calculate new canvas size to fit the rotated image
+          const newWidth =
+            Math.abs(image.width * cos) + Math.abs(image.height * sin);
+          const newHeight =
+            Math.abs(image.width * sin) + Math.abs(image.height * cos);
+
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+
+          // Translate to the center of the new canvas
+          ctx.translate(newWidth / 2, newHeight / 2);
+          ctx.rotate(radians);
+
+          // Draw the image with the center at the origin
+          ctx.drawImage(image, -image.width / 2, -image.height / 2);
+
+          resolve(canvas.toDataURL());
+        };
+      });
     };
 
     const updateObjectHelper = (object?: fabric.Object) => {
@@ -350,7 +386,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             this.drawingObject?.isDrawing &&
             this.drawingObject.type === "rectangle"
           ) {
-            console.log("Draw Rectangle - BEGIN");
+            // console.log("Draw Rectangle - BEGIN");
           }
         },
       );
@@ -374,7 +410,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             this.drawingObject?.isDrawing &&
             this.drawingObject.type === "rectangle"
           ) {
-            console.log("Draw Rectangle - DOWN");
+            // console.log("Draw Rectangle - DOWN");
             resetDrawingObject();
             updateObjectHelper(opt.target);
           }
