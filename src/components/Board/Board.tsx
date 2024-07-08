@@ -595,7 +595,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // Clear all objects from canvas
       fabricActions.deleteAll(editor?.canvas);
 
-      items.forEach((item, index) => {
+      items.forEach((item) => {
         const scaledCoords = item.coords.map((p) =>
           fabricUtils.toScaledCoord({
             cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
@@ -624,8 +624,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         );
 
         canvas.add(polygon);
-        if (item.hasNumberFlag) {
-          addCornerObjectToPolygon(polygon, index);
+        if (item.numberFlag) {
+          addCornerObjectToPolygon(polygon, item.numberFlag);
         }
       });
     }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);
