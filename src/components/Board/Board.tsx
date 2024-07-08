@@ -7,6 +7,7 @@ import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
 import * as fabricTypes from "../../fabric/types";
 import parse from "color-parse";
+import { CustomCornerObject } from "../../fabric/classes";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -107,18 +108,20 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           const customObjects =
             fabricUtils.retrieveObjects<fabricTypes.CustomObject>(canvas);
           if (!customObjects) return [];
-          return customObjects.map((co) => {
-            const info = getObjectInfo(co, includeContent);
+          return customObjects
+            .filter((el) => el.name)
+            .map((co) => {
+              const info = getObjectInfo(co, includeContent);
 
-            return {
-              id: co.name!,
-              category: "TODO_category",
-              color: "TODO_color",
-              value: "TODO_value",
-              coords: info.coords,
-              content: info.content,
-            };
-          });
+              return {
+                id: co.name!,
+                category: "TODO_category",
+                color: "TODO_color",
+                value: "TODO_value",
+                coords: info.coords,
+                content: info.content,
+              };
+            });
         }
         return [];
       },
@@ -203,6 +206,40 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         top: helper.top,
         enabled: true,
         object: object as fabricTypes.CustomObject,
+      });
+    };
+
+    const addCornerObjectToPolygon = (
+      polygon: fabric.Object,
+      index: number,
+    ) => {
+      if (!editor?.canvas) return;
+
+      const cornerObject = new CustomCornerObject({
+        number: index + 1,
+      });
+      const bounds = polygon.getBoundingRect();
+
+      cornerObject.set({
+        left: bounds.left + bounds.width,
+        top: bounds.top + bounds.height,
+      });
+
+      editor.canvas.add(cornerObject);
+
+      // Ensure the corner object moves with the polygon
+      polygon.on("moving", () => {
+        const newBounds = polygon.getBoundingRect();
+        cornerObject.set({
+          left: newBounds.left + newBounds.width,
+          top: newBounds.top + newBounds.height,
+        });
+        editor.canvas.renderAll();
+      });
+
+      // Ensure the corner object is removed when the polygon is removed
+      polygon.on("removed", () => {
+        editor.canvas?.remove(cornerObject);
       });
     };
 
@@ -558,7 +595,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // Clear all objects from canvas
       fabricActions.deleteAll(editor?.canvas);
 
-      for (const item of items) {
+      items.forEach((item, index) => {
         const scaledCoords = item.coords.map((p) =>
           fabricUtils.toScaledCoord({
             cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
@@ -586,43 +623,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           scaledCoords.length === 4, // Is a rectangle
         );
 
-        // const renderIcon = (
-        //   ctx: CanvasRenderingContext2D,
-        //   left: number,
-        //   top: number,
-        //   styleOverride: unknown,
-        //   fabricObject: fabric.Object,
-        // ) => {
-        //   const deleteIcon =
-        //     "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
-
-        //   const img = document.createElement("img");
-        //   img.src = deleteIcon;
-        //   const size = 24;
-        //   ctx.save();
-        //   ctx.translate(left, top);
-        //   if (fabricObject.angle)
-        //     ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
-        //   ctx.drawImage(img, -size / 2, -size / 2, size, size);
-        //   ctx.restore();
-        // };
-
-        // polygon.controls = {
-        //   ...polygon.controls,
-        //   onDelete: new fabric.Control({
-        //     x: 0.5,
-        //     y: -0.5,
-        //     offsetY: 16,
-        //     cursorStyle: "pointer",
-        //     mouseUpHandler: () => {
-        //       console.log("deleted up!");
-        //       return true;
-        //     },
-        //     render: renderIcon,
-        //   }),
-        // };
         canvas.add(polygon);
-      }
+        if (item.hasNumberFlag) {
+          addCornerObjectToPolygon(polygon, index);
+        }
+      });
     }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);
 
     const renderObjectHelper = () => {

@@ -11,4 +11,5 @@ export type CanvasObject = {
   coords: { x: number; y: number }[];
   opacity?: number;
   content?: string;
+  hasNumberFlag?: boolean;
 };
