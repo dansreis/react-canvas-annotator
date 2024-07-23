@@ -209,20 +209,42 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       });
     };
 
+    const findBottomRight = (
+      points: {
+        x: number;
+        y: number;
+      }[],
+    ) => {
+      return points.reduce((bottomRight, current) => {
+        if (
+          current.x > bottomRight.x ||
+          (current.x <= bottomRight.x && current.y > bottomRight.y)
+        ) {
+          return current;
+        }
+        return bottomRight;
+      }, points[0]);
+    };
+
     const addCornerObjectToPolygon = (
       polygon: fabric.Object,
       index: number,
+      scaledCoords: {
+        x: number;
+        y: number;
+      }[],
+      size?: number,
     ) => {
       if (!editor?.canvas) return;
 
       const cornerObject = new CustomCornerObject({
         number: index + 1,
+        size,
       });
-      const bounds = polygon.getBoundingRect();
 
       cornerObject.set({
-        left: bounds.left + bounds.width,
-        top: bounds.top + bounds.height,
+        left: findBottomRight(scaledCoords).x,
+        top: findBottomRight(scaledCoords).y,
       });
 
       editor.canvas.add(cornerObject);
@@ -625,7 +647,12 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
         canvas.add(polygon);
         if (item.numberFlag) {
-          addCornerObjectToPolygon(polygon, item.numberFlag);
+          addCornerObjectToPolygon(
+            polygon,
+            item.numberFlag,
+            scaledCoords,
+            item.numberFlagSize,
+          );
         }
       });
     }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);

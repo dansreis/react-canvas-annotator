@@ -3,13 +3,14 @@ import { fabric } from "fabric";
 interface CustomCornerObjectOptions extends fabric.IGroupOptions {
   number?: number;
   color?: string;
+  size?: number;
 }
 
 export class CustomCornerObject extends fabric.Group {
   constructor(options: CustomCornerObjectOptions = {}) {
     const number =
       options.number !== undefined ? options.number.toString() : "";
-    const size = 5;
+    const size = options.size !== undefined ? options.size : 15;
     const circle = new fabric.Circle({
       radius: size / 2,
       fill: "white",
@@ -17,7 +18,7 @@ export class CustomCornerObject extends fabric.Group {
       strokeWidth: 0.8,
       originX: "center",
       originY: "center",
-      left: 1.5,
+      left: 1.5 + (size - 5) * 0.5,
       top: -1,
     });
 
@@ -27,7 +28,7 @@ export class CustomCornerObject extends fabric.Group {
       originX: "center",
       originY: "center",
       fill: "black",
-      left: 1.5,
+      left: 1.5 + (size - 5) * 0.5,
       top: -1,
     });
 

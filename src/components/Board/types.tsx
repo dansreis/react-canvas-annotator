@@ -12,4 +12,5 @@ export type CanvasObject = {
   opacity?: number;
   content?: string;
   numberFlag?: number;
+  numberFlagSize?: number;
 };
