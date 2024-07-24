@@ -646,7 +646,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         );
 
         canvas.add(polygon);
-        if (item.numberFlag) {
+        if (item.numberFlag !== null && item.numberFlag !== undefined) {
           addCornerObjectToPolygon(
             polygon,
             item.numberFlag,
@@ -655,7 +655,14 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           );
         }
       });
-    }, [editor?.canvas, imageSize.width, imageSize.height, items, scaleRatio]);
+    }, [
+      editor?.canvas,
+      imageSize.width,
+      imageSize.height,
+      items,
+      scaleRatio,
+      addCornerObjectToPolygon,
+    ]);
 
     const renderObjectHelper = () => {
       if (
