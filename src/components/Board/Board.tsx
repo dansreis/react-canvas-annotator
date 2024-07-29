@@ -226,44 +226,47 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       }, points[0]);
     };
 
-    const addCornerObjectToPolygon = (
-      polygon: fabric.Object,
-      index: number,
-      scaledCoords: {
-        x: number;
-        y: number;
-      }[],
-      size?: number,
-    ) => {
-      if (!editor?.canvas) return;
+    const addCornerObjectToPolygon = useCallback(
+      (
+        polygon: fabric.Object,
+        index: number,
+        scaledCoords: {
+          x: number;
+          y: number;
+        }[],
+        size?: number,
+      ) => {
+        if (!editor?.canvas) return;
 
-      const cornerObject = new CustomCornerObject({
-        number: index + 1,
-        size,
-      });
-
-      cornerObject.set({
-        left: findBottomRight(scaledCoords).x,
-        top: findBottomRight(scaledCoords).y,
-      });
-
-      editor.canvas.add(cornerObject);
-
-      // Ensure the corner object moves with the polygon
-      polygon.on("moving", () => {
-        const newBounds = polygon.getBoundingRect();
-        cornerObject.set({
-          left: newBounds.left + newBounds.width,
-          top: newBounds.top + newBounds.height,
+        const cornerObject = new CustomCornerObject({
+          number: index + 1,
+          size,
         });
-        editor.canvas.renderAll();
-      });
 
-      // Ensure the corner object is removed when the polygon is removed
-      polygon.on("removed", () => {
-        editor.canvas?.remove(cornerObject);
-      });
-    };
+        cornerObject.set({
+          left: findBottomRight(scaledCoords).x,
+          top: findBottomRight(scaledCoords).y,
+        });
+
+        editor.canvas.add(cornerObject);
+
+        // Ensure the corner object moves with the polygon
+        polygon.on("moving", () => {
+          const newBounds = polygon.getBoundingRect();
+          cornerObject.set({
+            left: newBounds.left + newBounds.width,
+            top: newBounds.top + newBounds.height,
+          });
+          editor.canvas.renderAll();
+        });
+
+        // Ensure the corner object is removed when the polygon is removed
+        polygon.on("removed", () => {
+          editor.canvas?.remove(cornerObject);
+        });
+      },
+      [editor?.canvas],
+    );
 
     useEffect(() => {
       const parentCanvasElement = document.getElementById(
