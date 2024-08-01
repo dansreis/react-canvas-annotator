@@ -1,4 +1,5 @@
 import { default as React } from '../../../node_modules/react';
+import { fabric } from 'fabric';
 import { CanvasObject } from './types';
 
 export type BoardProps = {
@@ -14,10 +15,14 @@ export type BoardProps = {
     };
     helper: (id: string, content?: string) => React.ReactNode;
     onResetZoom?: () => void;
+    onSelectItem?: (item: fabric.Object | null) => void;
     onZoomChange?: (currentZoom: number) => void;
     onLoadedImage?: ({ width, height, }: {
         width: number;
         height: number;
+    }) => void;
+    onItemHover?: ({ id }: {
+        id: string | null;
     }) => void;
 };
 export type BoardActions = {
@@ -27,7 +32,7 @@ export type BoardActions = {
     deselectAll: () => void;
     downloadImage: () => void;
     drawObject: (type?: "rectangle" | "polygon") => void;
-    retrieveObjects: () => CanvasObject[];
+    retrieveObjects: (includeContent?: boolean) => CanvasObject[];
     retrieveObjectContent: (id: string) => string | null;
 };
 declare const Board: React.ForwardRefExoticComponent<BoardProps & React.RefAttributes<BoardActions>>;

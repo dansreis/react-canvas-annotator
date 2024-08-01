@@ -1,8 +1,8 @@
-import{j as e,B as o,M as s}from"./Board.stories-C12HTrS6.js";import{useMDXComponents as i}from"./index-CqcSDpoT.js";import{M as a,C as c}from"./index-BjLrT3Ll.js";import"./index-CDs2tPxN.js";import"./iframe-BpLQ_iD5.js";import"../sb-preview/runtime.js";import"./index-5GBGjSEQ.js";import"./index-BbYVc9ui.js";import"./index-DrFu-skq.js";function t(r){const n={code:"code",h1:"h1",h2:"h2",h4:"h4",li:"li",p:"p",pre:"pre",strong:"strong",ul:"ul",...i(),...r.components};return e.jsxs(e.Fragment,{children:[e.jsx(a,{of:o,title:"Board"}),`
+import{j as e}from"./jsx-runtime-QvZ8i92b.js";import{useMDXComponents as o}from"./index-FeUjBnvO.js";import{M as i,C as s}from"./index-BR30DjoS.js";import{B as a,M as c}from"./Board.stories-Bno9GSkC.js";import"./index-uubelm5h.js";import"./iframe-BUWNiWsv.js";import"../sb-preview/runtime.js";import"./index-Ds9UkXKy.js";import"./utils-DhuYYJsA.js";import"./index-DrFu-skq.js";function t(r){const n={code:"code",h1:"h1",h2:"h2",h4:"h4",li:"li",p:"p",pre:"pre",strong:"strong",ul:"ul",...o(),...r.components};return e.jsxs(e.Fragment,{children:[e.jsx(i,{of:a,title:"Board"}),`
 `,e.jsx(n.h1,{id:"board",children:"Board"}),`
 `,e.jsx(n.p,{children:"Button component with different props."}),`
 `,e.jsx(n.h4,{id:"example",children:"Example"}),`
-`,e.jsx(c,{of:s}),`
+`,e.jsx(s,{of:c}),`
 `,e.jsx(n.h2,{id:"usage",children:"Usage"}),`
 `,e.jsx(n.pre,{children:e.jsx(n.code,{className:"language-ts",children:`import Board, {BoardActions} from "react-canvas-annotator";
 
@@ -35,4 +35,4 @@ export default Example;
 `,e.jsxs(n.ul,{children:[`
 `,e.jsxs(n.li,{children:[e.jsx(n.strong,{children:"currentStatus"}),": Boolean indicating the current dragging status."]}),`
 `,e.jsxs(n.li,{children:[e.jsx(n.strong,{children:"onLoadedImage"}),": ",e.jsx(n.code,{children:"({ width, height }: { width: number, height: number }) => void"})," -  Optional callback function called when the image is loaded (width: Width of the loaded image, height: Height of the loaded image)."]}),`
-`]})]})}function f(r={}){const{wrapper:n}={...i(),...r.components};return n?e.jsx(n,{...r,children:e.jsx(t,{...r})}):t(r)}export{f as default};
+`]})]})}function b(r={}){const{wrapper:n}={...o(),...r.components};return n?e.jsx(n,{...r,children:e.jsx(t,{...r})}):t(r)}export{b as default};

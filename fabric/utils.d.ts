@@ -156,4 +156,3 @@ export declare const getObjectHelperCoords: (obj: fabric.Object) => {
     left: number;
     top: number;
 };
-export declare const toPolygonId: (id?: string) => string;
