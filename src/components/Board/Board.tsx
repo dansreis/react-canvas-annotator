@@ -19,6 +19,7 @@ export type BoardProps = {
   };
   helper: (id: string, content?: string) => React.ReactNode;
   onResetZoom?: () => void;
+  onSelectItem?: (item: fabric.Object) => void;
   onZoomChange?: (currentZoom: number) => void;
   onLoadedImage?: ({
     width,
@@ -49,6 +50,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       items,
       onResetZoom,
       onZoomChange,
+      onSelectItem,
       onLoadedImage,
       onItemHover,
       helper,
@@ -560,6 +562,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         if (selected && !isDrawing) {
           updateObjectHelper(selected);
         }
+        onSelectItem && selected && onSelectItem(selected);
       };
 
       // Some element was selected
