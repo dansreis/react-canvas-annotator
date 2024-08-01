@@ -1,7 +1,7 @@
 {
   "name": "@dansreis/react-canvas-annotator",
   "homepage": "http://dansreis.github.io/react-canvas-annotator",
-  "version": "1.0.4-alpha",
+  "version": "1.0.5-alpha",
   "description": "",
   "type": "module",
   "main": "dist/index.cjs.js",
