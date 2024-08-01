@@ -526,6 +526,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         _opt: fabric.IEvent<MouseEvent>,
       ) {
         // While object is being moved, remove the annotator helper
+
         setObjectHelper({ ...objectHelper, enabled: false });
       };
 
@@ -542,6 +543,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           const obj = opt.target;
           if (obj) {
             const helper = fabricUtils.getObjectHelperCoords(obj);
+
             setObjectHelper({
               left: helper.left,
               top: helper.top,
@@ -565,10 +567,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         onSelectItem && selected && onSelectItem(selected);
       };
 
-      // Some element was selected
-      editor.canvas.on("selection:created", onSelectionEvent);
-      editor.canvas.on("selection:updated", onSelectionEvent);
-
       // On object selection cleared
       editor.canvas.on(
         "selection:cleared",
@@ -579,6 +577,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           onSelectItem && onSelectItem(null);
         },
       );
+
+      // Some element was selected
+      editor.canvas.on("selection:created", onSelectionEvent);
+      editor.canvas.on("selection:updated", onSelectionEvent);
 
       editor.canvas.on("mouse:over", (opt) => {
         const target = opt.target;
@@ -609,6 +611,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       resetDrawingObject,
       objectHelper,
       onItemHover,
+      onSelectItem,
     ]);
 
     // Update zoom parent value
