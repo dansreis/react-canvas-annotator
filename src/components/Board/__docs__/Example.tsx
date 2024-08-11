@@ -44,6 +44,13 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         </button>
         <button
           onClick={() => {
+            ref.current?.jumpToId("1");
+          }}
+        >
+          Jump to 1
+        </button>
+        <button
+          onClick={() => {
             const obj = ref.current?.retrieveObjectContent("1");
             console.log(obj);
           }}
