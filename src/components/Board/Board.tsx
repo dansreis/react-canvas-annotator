@@ -35,6 +35,7 @@ export type BoardActions = {
   resetZoom: () => void;
   deleteSelectedObjects: () => void;
   deleteObjectById: (id: string) => void;
+  jumpToId: (id: string) => void;
   deselectAll: () => void;
   downloadImage: () => void;
   drawObject: (type?: "rectangle" | "polygon") => void;
@@ -86,6 +87,36 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           canvas.discardActiveObject();
           fabricActions.deleteObjectByName(canvas, id);
         }
+      },
+      jumpToId(id: string) {
+        const canvas = editor?.canvas;
+        if (!canvas) return;
+
+        const object = fabricUtils.findObjectByName(canvas, id);
+        if (!object) return;
+
+        // Get the object's center point
+        const objectCenter = object.getCenterPoint();
+
+        // Get the canvas dimensions
+        const canvasWidth = canvas.getWidth();
+        const canvasHeight = canvas.getHeight();
+
+        // Calculate the new viewport transform
+        const vpt = canvas.viewportTransform;
+        if (!vpt) return;
+
+        vpt[4] = canvasWidth / 2 - objectCenter.x * vpt[0];
+        vpt[5] = canvasHeight / 2 - objectCenter.y * vpt[3];
+
+        // Apply the new viewport transform
+        canvas.setViewportTransform(vpt);
+
+        // Render the canvas
+        canvas.renderAll();
+
+        // Optionally, you can also select the object
+        canvas.setActiveObject(object);
       },
       drawObject(type?: "rectangle" | "polygon") {
         const isDrawing = !drawingObject?.isDrawing;
