@@ -88,7 +88,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           fabricActions.deleteObjectByName(canvas, id);
         }
       },
-      jumpToId(id: string) {
+      jumpToId(id: string, setActive?: boolean) {
         const canvas = editor?.canvas;
         if (!canvas) return;
 
@@ -114,9 +114,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
         // Render the canvas
         canvas.renderAll();
-
-        // Optionally, you can also select the object
-        canvas.setActiveObject(object);
+        if (setActive === true) {
+          // Optionally, you can also select the object
+          canvas.setActiveObject(object);
+        }
       },
       drawObject(type?: "rectangle" | "polygon") {
         const isDrawing = !drawingObject?.isDrawing;
