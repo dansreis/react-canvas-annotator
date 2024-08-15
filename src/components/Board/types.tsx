@@ -3,7 +3,8 @@ import { CursorType } from "../../fabric/types";
 export type CanvasObject = {
   id: string;
   category: string;
-  color: string;
+  borderColor: string;
+  fillColor: string;
   value: string;
   selectable?: boolean;
   hoverCursor?: CursorType;

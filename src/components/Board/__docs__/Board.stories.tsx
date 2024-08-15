@@ -11,7 +11,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "1",
     category: "category1",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "⌀42",
     coords: [
       {
@@ -35,7 +36,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "2",
     category: "category2",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "38",
     coords: [
       {
@@ -59,7 +61,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "3",
     category: "category3",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "9",
     coords: [
       {
@@ -83,7 +86,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "4",
     category: "category4",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "⌀38",
     coords: [
       {
@@ -107,7 +111,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "5",
     category: "category5",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "(25.5)",
     coords: [
       {
@@ -131,7 +136,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "6",
     category: "category6",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "1x45°",
     coords: [
       {
@@ -155,7 +161,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "7",
     category: "category7",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "1x45°",
     coords: [
       {
@@ -179,7 +186,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "8",
     category: "category8",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "16",
     coords: [
       {
@@ -203,7 +211,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "9",
     category: "category9",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "45.0°",
     coords: [
       {
@@ -227,7 +236,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "10",
     category: "category10",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "⌀21.5±0.1",
     coords: [
       {
@@ -251,7 +261,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "11",
     category: "category11",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "60.0°",
     coords: [
       {
@@ -275,7 +286,8 @@ const ITEMS: CanvasObject[] = [
   {
     id: "12",
     category: "category12",
-    color: "green",
+    borderColor: "green",
+    fillColor: "rgba(0,128,1)",
     value: "⌀38H12",
     coords: [
       {
