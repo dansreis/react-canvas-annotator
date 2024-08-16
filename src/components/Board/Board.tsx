@@ -243,20 +243,90 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       });
     };
 
-    const findBottomRight = (
-      points: {
-        x: number;
-        y: number;
-      }[],
+    const findPositionCoords = (
+      points: { x: number; y: number }[],
+      position:
+        | "topLeft"
+        | "top"
+        | "topRight"
+        | "left"
+        | "right"
+        | "bottomLeft"
+        | "bottom"
+        | "bottomRight",
     ) => {
-      return points.reduce((bottomRight, current) => {
-        if (
-          current.x > bottomRight.x ||
-          (current.x <= bottomRight.x && current.y > bottomRight.y)
-        ) {
-          return current;
+      return points.reduce((selected, current) => {
+        switch (position) {
+          case "topLeft":
+            if (
+              current.y < selected.y ||
+              (current.y === selected.y && current.x < selected.x)
+            ) {
+              return current;
+            }
+            break;
+          case "top":
+            if (
+              current.y < selected.y ||
+              (current.y === selected.y &&
+                Math.abs(current.x) < Math.abs(selected.x))
+            ) {
+              return current;
+            }
+            break;
+          case "topRight":
+            if (
+              current.y < selected.y ||
+              (current.y === selected.y && current.x > selected.x)
+            ) {
+              return current;
+            }
+            break;
+          case "left":
+            if (
+              current.x < selected.x ||
+              (current.x === selected.x &&
+                Math.abs(current.y) < Math.abs(selected.y))
+            ) {
+              return current;
+            }
+            break;
+          case "right":
+            if (
+              current.x > selected.x ||
+              (current.x === selected.x &&
+                Math.abs(current.y) < Math.abs(selected.y))
+            ) {
+              return current;
+            }
+            break;
+          case "bottomLeft":
+            if (
+              current.y > selected.y ||
+              (current.y === selected.y && current.x < selected.x)
+            ) {
+              return current;
+            }
+            break;
+          case "bottom":
+            if (
+              current.y > selected.y ||
+              (current.y === selected.y &&
+                Math.abs(current.x) < Math.abs(selected.x))
+            ) {
+              return current;
+            }
+            break;
+          case "bottomRight":
+            if (
+              current.y > selected.y ||
+              (current.y === selected.y && current.x > selected.x)
+            ) {
+              return current;
+            }
+            break;
         }
-        return bottomRight;
+        return selected;
       }, points[0]);
     };
 
@@ -269,17 +339,24 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           y: number;
         }[],
         size?: number,
+        position?:
+          | "topLeft"
+          | "top"
+          | "topRight"
+          | "left"
+          | "right"
+          | "bottomLeft"
+          | "bottom"
+          | "bottomRight",
       ) => {
         if (!editor?.canvas) return;
 
         const cornerObject = new CustomCornerObject({
+          polygon,
           number: index + 1,
           size,
-        });
-
-        cornerObject.set({
-          left: findBottomRight(scaledCoords).x,
-          top: findBottomRight(scaledCoords).y,
+          position: position ?? "bottomRight",
+          coords: findPositionCoords(scaledCoords, position ?? "bottomRight"),
         });
 
         editor.canvas.add(cornerObject);
@@ -691,6 +768,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             item.numberFlag,
             scaledCoords,
             item.numberFlagSize,
+            item.numberFlagPosition,
           );
         }
       });
