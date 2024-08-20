@@ -6,7 +6,6 @@ import { CanvasObject } from "./types";
 import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
 import * as fabricTypes from "../../fabric/types";
-import parse from "color-parse";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -151,7 +150,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               return {
                 id: co.name!,
                 category: "TODO_category",
-                color: "TODO_color",
+                borderColor: "TODO_color",
+                fillColor: "TODO_color",
                 value: "TODO_value",
                 coords: info.coords,
                 content: info.content,
@@ -872,8 +872,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           scaledCoords,
           {
             name: item.id,
-            stroke: item.color,
-            fill: `rgba(${parse(item.color).values.join(",")},${item.opacity ?? 0.4})`,
+            stroke: item.borderColor,
+            fill: item.fillColor,
             selectable,
             hoverCursor: item.hoverCursor,
             moveCursor: item.moveCursor,
