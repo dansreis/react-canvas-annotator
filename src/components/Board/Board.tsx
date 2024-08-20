@@ -7,7 +7,6 @@ import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
 import * as fabricTypes from "../../fabric/types";
 import parse from "color-parse";
-import { CustomCornerObject } from "../../fabric/classes";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -255,80 +254,70 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         | "bottom"
         | "bottomRight",
     ) => {
-      return points.reduce((selected, current) => {
-        switch (position) {
-          case "topLeft":
-            if (
-              current.y < selected.y ||
-              (current.y === selected.y && current.x < selected.x)
-            ) {
-              return current;
-            }
-            break;
-          case "top":
-            if (
-              current.y < selected.y ||
-              (current.y === selected.y &&
-                Math.abs(current.x) < Math.abs(selected.x))
-            ) {
-              return current;
-            }
-            break;
-          case "topRight":
-            if (
-              current.y < selected.y ||
-              (current.y === selected.y && current.x > selected.x)
-            ) {
-              return current;
-            }
-            break;
-          case "left":
-            if (
-              current.x < selected.x ||
-              (current.x === selected.x &&
-                Math.abs(current.y) < Math.abs(selected.y))
-            ) {
-              return current;
-            }
-            break;
-          case "right":
-            if (
-              current.x > selected.x ||
-              (current.x === selected.x &&
-                Math.abs(current.y) < Math.abs(selected.y))
-            ) {
-              return current;
-            }
-            break;
-          case "bottomLeft":
-            if (
-              current.y > selected.y ||
-              (current.y === selected.y && current.x < selected.x)
-            ) {
-              return current;
-            }
-            break;
-          case "bottom":
-            if (
-              current.y > selected.y ||
-              (current.y === selected.y &&
-                Math.abs(current.x) < Math.abs(selected.x))
-            ) {
-              return current;
-            }
-            break;
-          case "bottomRight":
-            if (
-              current.y > selected.y ||
-              (current.y === selected.y && current.x > selected.x)
-            ) {
-              return current;
-            }
-            break;
-        }
-        return selected;
-      }, points[0]);
+      // First, find the extreme points
+      const topLeft = points.reduce((a, b) => (a.x + a.y < b.x + b.y ? a : b));
+      const topRight = points.reduce((a, b) => (b.y - b.x < a.y - a.x ? b : a));
+      const bottomLeft = points.reduce((a, b) =>
+        b.y - b.x > a.y - a.x ? b : a,
+      );
+      const bottomRight = points.reduce((a, b) =>
+        b.x + b.y > a.x + a.y ? b : a,
+      );
+
+      // Function to find midpoint between two points
+      const midpoint = (
+        p1: { x: number; y: number },
+        p2: { x: number; y: number },
+      ) => ({
+        x: (p1.x + p2.x) / 2,
+        y: (p1.y + p2.y) / 2,
+      });
+
+      const topMid = midpoint(topLeft, topRight);
+      const leftMid = midpoint(topLeft, bottomLeft);
+      const rightMid = midpoint(topRight, bottomRight);
+      const bottomMid = midpoint(bottomLeft, bottomRight);
+      switch (position) {
+        case "topLeft":
+          return topLeft;
+        case "top":
+          return topMid;
+        case "topRight":
+          return topRight;
+        case "left":
+          return leftMid;
+        case "right":
+          return rightMid;
+        case "bottomLeft":
+          return bottomLeft;
+        case "bottom":
+          return bottomMid;
+        case "bottomRight":
+          return bottomRight;
+      }
     };
+
+    function getAngleBetweenPoints(
+      point1: fabric.Point,
+      point2: fabric.Point,
+    ): number {
+      // Calculate the differences in x and y coordinates
+      const dx = point2.x - point1.x;
+      const dy = point2.y - point1.y;
+
+      // Calculate the angle using Math.atan2
+      let angle = Math.atan2(dy, dx);
+
+      // Convert the angle from radians to degrees
+      angle = angle * (180 / Math.PI);
+
+      // Normalize the angle to be between 0 and 360 degrees
+      if (angle < 0) {
+        angle += 360;
+      }
+
+      return angle;
+    }
 
     const addCornerObjectToPolygon = useCallback(
       (
@@ -350,31 +339,110 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           | "bottomRight",
       ) => {
         if (!editor?.canvas) return;
+        const _size = size ?? 0;
+        const polygonCoords = findPositionCoords(
+          scaledCoords,
+          position ?? "bottomRight",
+        );
+        let leftCircleAndTextOffset = 0;
+        let topCircleAndTextOffset = 0;
+        let pointerAngle = 0;
+        const generalMidOffset = 2;
+        switch (position) {
+          case "topLeft":
+            leftCircleAndTextOffset = -_size / 2;
+            topCircleAndTextOffset = -_size / 2;
+            break;
+          case "top":
+            leftCircleAndTextOffset = 0;
+            topCircleAndTextOffset = -_size / 2 - generalMidOffset * 2;
+            break;
+          case "topRight":
+            leftCircleAndTextOffset = +_size / 2;
+            topCircleAndTextOffset = -_size / 2;
+            break;
+          case "left":
+            leftCircleAndTextOffset = -_size / 2 - generalMidOffset * 2;
+            topCircleAndTextOffset = 0;
+            break;
+          case "right":
+            leftCircleAndTextOffset = +_size / 2 + generalMidOffset * 2;
+            topCircleAndTextOffset = 0;
+            break;
+          case "bottomLeft":
+            leftCircleAndTextOffset = -_size / 2;
+            topCircleAndTextOffset = +_size / 2;
+            break;
+          case "bottom":
+            leftCircleAndTextOffset = 0;
+            topCircleAndTextOffset = +_size / 2 + generalMidOffset * 2;
+            break;
+          default:
+            leftCircleAndTextOffset = +_size / 2;
+            topCircleAndTextOffset = +_size / 2;
+        }
 
-        const cornerObject = new CustomCornerObject({
-          polygon,
-          number: index + 1,
-          size,
-          position: position ?? "bottomRight",
-          coords: findPositionCoords(scaledCoords, position ?? "bottomRight"),
+        pointerAngle =
+          getAngleBetweenPoints(
+            new fabric.Point(
+              polygonCoords.x + leftCircleAndTextOffset,
+              polygonCoords.y + topCircleAndTextOffset,
+            ),
+            polygon.getCenterPoint(),
+          ) + 90;
+
+        const circleLeft = polygonCoords.x + leftCircleAndTextOffset;
+        const circleTop = polygonCoords.y + topCircleAndTextOffset;
+        // Calculate the direction vector
+        const dx = polygon.getCenterPoint().x - circleLeft;
+        const dy = polygon.getCenterPoint().y - circleTop;
+
+        // Calculate the unit vector
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const unitX = dx / length;
+        const unitY = dy / length;
+
+        // Calculate the new point coordinates
+        const pointerLeft = circleLeft + (_size / 2) * unitX;
+        const pointerTop = circleTop + (_size / 2) * unitY;
+
+        const circle = new fabric.Circle({
+          radius: _size / 2,
+          fill: "white",
+          stroke: "green",
+          strokeWidth: 0.8,
+          originX: "center",
+          originY: "center",
+          left: circleLeft,
+          top: circleTop,
         });
 
-        editor.canvas.add(cornerObject);
-
-        // Ensure the corner object moves with the polygon
-        polygon.on("moving", () => {
-          const newBounds = polygon.getBoundingRect();
-          cornerObject.set({
-            left: newBounds.left + newBounds.width,
-            top: newBounds.top + newBounds.height,
-          });
-          editor.canvas.renderAll();
+        const text = new fabric.Text(index.toString(), {
+          fontSize: _size / 2,
+          fontFamily: "Arial",
+          originX: "center",
+          originY: "center",
+          fill: "black",
+          left: circleLeft,
+          top: circleTop,
         });
 
-        // Ensure the corner object is removed when the polygon is removed
-        polygon.on("removed", () => {
-          editor.canvas?.remove(cornerObject);
+        const pointer = new fabric.Triangle({
+          width: _size / 3,
+          height: _size / 3,
+          fill: "green",
+          stroke: "green",
+          strokeWidth: 1,
+          originX: "center",
+          originY: "center",
+          left: pointerLeft,
+          top: pointerTop,
+          angle: pointerAngle,
         });
+
+        editor.canvas.add(pointer);
+        editor.canvas.add(circle);
+        editor.canvas.add(text);
       },
       [editor?.canvas],
     );
@@ -718,6 +786,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       resetDrawingObject,
       objectHelper,
       onItemHover,
+      onSelectItem,
     ]);
 
     // Update zoom parent value

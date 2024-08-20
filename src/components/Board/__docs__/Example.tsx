@@ -7,6 +7,17 @@ const Example: FC<BoardProps> = ({ items, image }) => {
   const [isDrawingPolygon, setIsDrawingPolygon] = useState(false);
   const [isDrawingRectangle, setIsDrawingRectangle] = useState(false);
   const [currentZoom, setCurrentZoom] = useState<number | undefined>();
+  const [numberFlagSize, setNumberFlagSize] = useState(15);
+  const [numberFlagPosition, setNumberFlagPosition] = useState<
+    | "topLeft"
+    | "top"
+    | "topRight"
+    | "left"
+    | "right"
+    | "bottomLeft"
+    | "bottom"
+    | "bottomRight"
+  >("topLeft");
 
   return (
     <>
@@ -64,6 +75,43 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         >
           Current zoom: {currentZoom}
         </div>
+        <div>
+          <p>Numberflag size:</p>
+          <input
+            type="range"
+            min="5"
+            max="35"
+            value={numberFlagSize}
+            onChange={(e) => setNumberFlagSize(parseInt(e.target.value))}
+          ></input>
+        </div>
+        <div>
+          <p>Numberflag position:</p>
+          <select
+            onChange={(e) =>
+              setNumberFlagPosition(
+                e.target.value as
+                  | "topLeft"
+                  | "top"
+                  | "topRight"
+                  | "left"
+                  | "right"
+                  | "bottomLeft"
+                  | "bottom"
+                  | "bottomRight",
+              )
+            }
+          >
+            <option value="topLeft">topLeft</option>
+            <option value="top">top</option>
+            <option value="topRight">topRight</option>
+            <option value="left">left</option>
+            <option value="right">right</option>
+            <option value="bottomLeft">bottomLeft</option>
+            <option value="bottom">bottom</option>
+            <option value="bottomRight">bottomRight</option>
+          </select>
+        </div>
       </div>
 
       <div
@@ -79,7 +127,9 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         <Board
           ref={ref}
           image={image}
-          items={items}
+          items={items.map((i) => {
+            return { ...i, numberFlagSize, numberFlagPosition };
+          })}
           helper={(id, content) => {
             const processContent = (c?: string) => {
               const startLength = 20;
