@@ -18,6 +18,7 @@ export type BoardProps = {
   };
   helper: (id: string, content?: string) => React.ReactNode;
   onResetZoom?: () => void;
+  onMovingNumberFlag?: (id: string, newPosition: string) => void;
   onSelectItem?: (item: fabric.Object | null) => void;
   onZoomChange?: (currentZoom: number) => void;
   onLoadedImage?: ({
@@ -49,6 +50,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       initialStatus,
       items,
       onResetZoom,
+      onMovingNumberFlag,
       onZoomChange,
       onSelectItem,
       onLoadedImage,
@@ -321,6 +323,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
     const addCornerObjectToPolygon = useCallback(
       (
+        id: string,
         polygon: fabric.Object,
         index: number,
         scaledCoords: {
@@ -337,65 +340,33 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           | "bottomLeft"
           | "bottom"
           | "bottomRight",
+        color?: string,
       ) => {
         if (!editor?.canvas) return;
+        if (!color) color = "green";
         const _size = size ?? 0;
         const polygonCoords = findPositionCoords(
           scaledCoords,
           position ?? "bottomRight",
         );
-        let leftCircleAndTextOffset = 0;
-        let topCircleAndTextOffset = 0;
-        let pointerAngle = 0;
-        const generalMidOffset = 2;
-        switch (position) {
-          case "topLeft":
-            leftCircleAndTextOffset = -_size / 2;
-            topCircleAndTextOffset = -_size / 2;
-            break;
-          case "top":
-            leftCircleAndTextOffset = 0;
-            topCircleAndTextOffset = -_size / 2 - generalMidOffset * 2;
-            break;
-          case "topRight":
-            leftCircleAndTextOffset = +_size / 2;
-            topCircleAndTextOffset = -_size / 2;
-            break;
-          case "left":
-            leftCircleAndTextOffset = -_size / 2 - generalMidOffset * 2;
-            topCircleAndTextOffset = 0;
-            break;
-          case "right":
-            leftCircleAndTextOffset = +_size / 2 + generalMidOffset * 2;
-            topCircleAndTextOffset = 0;
-            break;
-          case "bottomLeft":
-            leftCircleAndTextOffset = -_size / 2;
-            topCircleAndTextOffset = +_size / 2;
-            break;
-          case "bottom":
-            leftCircleAndTextOffset = 0;
-            topCircleAndTextOffset = +_size / 2 + generalMidOffset * 2;
-            break;
-          default:
-            leftCircleAndTextOffset = +_size / 2;
-            topCircleAndTextOffset = +_size / 2;
-        }
 
-        pointerAngle =
+        const [leftCircleAndTextCoord, topCircleAndTextCoord] =
+          fabricUtils.getLeftAndTopCircleAndTextCoords(
+            position ?? "bottomRight",
+            _size,
+            polygonCoords,
+            true,
+          );
+
+        const pointerAngle =
           getAngleBetweenPoints(
-            new fabric.Point(
-              polygonCoords.x + leftCircleAndTextOffset,
-              polygonCoords.y + topCircleAndTextOffset,
-            ),
+            new fabric.Point(leftCircleAndTextCoord, topCircleAndTextCoord),
             polygon.getCenterPoint(),
           ) + 90;
 
-        const circleLeft = polygonCoords.x + leftCircleAndTextOffset;
-        const circleTop = polygonCoords.y + topCircleAndTextOffset;
         // Calculate the direction vector
-        const dx = polygon.getCenterPoint().x - circleLeft;
-        const dy = polygon.getCenterPoint().y - circleTop;
+        const dx = polygon.getCenterPoint().x - leftCircleAndTextCoord;
+        const dy = polygon.getCenterPoint().y - topCircleAndTextCoord;
 
         // Calculate the unit vector
         const length = Math.sqrt(dx * dx + dy * dy);
@@ -403,18 +374,16 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         const unitY = dy / length;
 
         // Calculate the new point coordinates
-        const pointerLeft = circleLeft + (_size / 2) * unitX;
-        const pointerTop = circleTop + (_size / 2) * unitY;
 
         const circle = new fabric.Circle({
           radius: _size / 2,
           fill: "white",
-          stroke: "green",
+          stroke: color,
           strokeWidth: 0.8,
           originX: "center",
           originY: "center",
-          left: circleLeft,
-          top: circleTop,
+          left: leftCircleAndTextCoord,
+          top: topCircleAndTextCoord,
         });
 
         const text = new fabric.Text(index.toString(), {
@@ -423,28 +392,110 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           originX: "center",
           originY: "center",
           fill: "black",
-          left: circleLeft,
-          top: circleTop,
+          left: leftCircleAndTextCoord,
+          top: topCircleAndTextCoord,
         });
 
         const pointer = new fabric.Triangle({
           width: _size / 3,
           height: _size / 3,
-          fill: "green",
-          stroke: "green",
+          fill: color,
+          stroke: color,
           strokeWidth: 1,
           originX: "center",
           originY: "center",
-          left: pointerLeft,
-          top: pointerTop,
+          left: fabricUtils.pointerLeft(
+            position ?? "bottomRight",
+            _size,
+            unitX,
+            polygonCoords,
+          ),
+          top: fabricUtils.pointerTop(
+            position ?? "bottomRight",
+            _size,
+            unitY,
+            polygonCoords,
+          ),
           angle: pointerAngle,
         });
 
-        editor.canvas.add(pointer);
-        editor.canvas.add(circle);
-        editor.canvas.add(text);
+        const group = new fabric.Group([pointer, circle, text]);
+        const positionMap = [
+          "topLeft",
+          "top",
+          "topRight",
+          "left",
+          "right",
+          "bottomLeft",
+          "bottom",
+          "bottomRight",
+        ].map((el) => {
+          return {
+            position: el,
+            coords: [
+              fabricUtils.pointerLeft(
+                el as
+                  | "topLeft"
+                  | "top"
+                  | "topRight"
+                  | "left"
+                  | "right"
+                  | "bottomLeft"
+                  | "bottom"
+                  | "bottomRight",
+                _size,
+                unitX,
+                polygonCoords,
+              ),
+              fabricUtils.pointerTop(
+                el as
+                  | "topLeft"
+                  | "top"
+                  | "topRight"
+                  | "left"
+                  | "right"
+                  | "bottomLeft"
+                  | "bottom"
+                  | "bottomRight",
+                _size,
+                unitY,
+                polygonCoords,
+              ),
+            ],
+          };
+        });
+        group.on("modified", (e) => {
+          const p = e.transform?.target.getCenterPoint();
+          const newPosition = positionMap.reduce(
+            (lowestDistancePosition, currentValue) => {
+              const newPoint = new fabric.Point(p?.x ?? 0, p?.y ?? 0);
+              if (
+                (newPoint.distanceFrom(
+                  new fabric.Point(
+                    currentValue.coords[0],
+                    currentValue.coords[1],
+                  ),
+                ) ?? 0) <
+                (newPoint.distanceFrom(
+                  new fabric.Point(
+                    lowestDistancePosition.coords[0],
+                    lowestDistancePosition.coords[1],
+                  ),
+                ) ?? 0)
+              ) {
+                return currentValue;
+              } else {
+                return lowestDistancePosition;
+              }
+            },
+            positionMap[0],
+          );
+          onMovingNumberFlag?.(id, newPosition.position);
+        });
+
+        editor.canvas.add(group);
       },
-      [editor?.canvas],
+      [editor?.canvas, onMovingNumberFlag],
     );
 
     useEffect(() => {
@@ -833,11 +884,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         canvas.add(polygon);
         if (item.numberFlag !== null && item.numberFlag !== undefined) {
           addCornerObjectToPolygon(
+            item.id,
             polygon,
             item.numberFlag,
             scaledCoords,
             item.numberFlagSize,
             item.numberFlagPosition,
+            "green",
           );
         }
       });

@@ -156,9 +156,10 @@ const Example: FC<BoardProps> = ({ items, image }) => {
             );
           }}
           onZoomChange={(v) => setCurrentZoom(v)}
-          // onItemHover={(item) => {
-          //   console.log(item);
-          // }}
+          onItemHover={(item) => {
+            console.log(item);
+          }}
+          onMovingNumberFlag={(id, newPosition) => console.log(id, newPosition)}
         />
       </div>
     </>
