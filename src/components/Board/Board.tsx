@@ -17,7 +17,7 @@ export type BoardProps = {
   };
   helper: (id: string, content?: string) => React.ReactNode;
   onResetZoom?: () => void;
-  onMovingNumberFlag?: (id: string, newPosition: string) => void;
+  onMovingNumberFlag?: (item: CanvasObject, newPosition: string) => void;
   onSelectItem?: (item: fabric.Object | null) => void;
   onZoomChange?: (currentZoom: number) => void;
   onLoadedImage?: ({
@@ -323,28 +323,21 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
     const addCornerObjectToPolygon = useCallback(
       (
-        id: string,
+        item: CanvasObject,
         polygon: fabric.Object,
-        index: number,
         scaledCoords: {
           x: number;
           y: number;
         }[],
-        size?: number,
-        position?:
-          | "topLeft"
-          | "top"
-          | "topRight"
-          | "left"
-          | "right"
-          | "bottomLeft"
-          | "bottom"
-          | "bottomRight",
+
         color?: string,
       ) => {
+        const index = item.numberFlag ?? 0;
+        const position = item.numberFlagPosition;
+
         if (!editor?.canvas) return;
         if (!color) color = "green";
-        const _size = size ?? 0;
+        const _size = item.numberFlagSize ?? 0;
         const polygonCoords = findPositionCoords(
           scaledCoords,
           position ?? "bottomRight",
@@ -490,7 +483,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             },
             positionMap[0],
           );
-          onMovingNumberFlag?.(id, newPosition.position);
+          onMovingNumberFlag?.(item, newPosition.position);
         });
 
         editor.canvas.add(group);
@@ -883,15 +876,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
         canvas.add(polygon);
         if (item.numberFlag !== null && item.numberFlag !== undefined) {
-          addCornerObjectToPolygon(
-            item.id,
-            polygon,
-            item.numberFlag,
-            scaledCoords,
-            item.numberFlagSize,
-            item.numberFlagPosition,
-            "green",
-          );
+          addCornerObjectToPolygon(item, polygon, scaledCoords, "green");
         }
       });
     }, [
