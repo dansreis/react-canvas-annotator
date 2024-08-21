@@ -6,7 +6,6 @@ import { CanvasObject } from "./types";
 import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
 import * as fabricTypes from "../../fabric/types";
-import { CustomCornerObject } from "../../fabric/classes";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -18,6 +17,7 @@ export type BoardProps = {
   };
   helper: (id: string, content?: string) => React.ReactNode;
   onResetZoom?: () => void;
+  onMovingNumberFlag?: (id: string, newPosition: string) => void;
   onSelectItem?: (item: fabric.Object | null) => void;
   onZoomChange?: (currentZoom: number) => void;
   onLoadedImage?: ({
@@ -49,6 +49,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       initialStatus,
       items,
       onResetZoom,
+      onMovingNumberFlag,
       onZoomChange,
       onSelectItem,
       onLoadedImage,
@@ -243,25 +244,86 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       });
     };
 
-    const findBottomRight = (
-      points: {
-        x: number;
-        y: number;
-      }[],
+    const findPositionCoords = (
+      points: { x: number; y: number }[],
+      position:
+        | "topLeft"
+        | "top"
+        | "topRight"
+        | "left"
+        | "right"
+        | "bottomLeft"
+        | "bottom"
+        | "bottomRight",
     ) => {
-      return points.reduce((bottomRight, current) => {
-        if (
-          current.x > bottomRight.x ||
-          (current.x <= bottomRight.x && current.y > bottomRight.y)
-        ) {
-          return current;
-        }
-        return bottomRight;
-      }, points[0]);
+      // First, find the extreme points
+      const topLeft = points.reduce((a, b) => (a.x + a.y < b.x + b.y ? a : b));
+      const topRight = points.reduce((a, b) => (b.y - b.x < a.y - a.x ? b : a));
+      const bottomLeft = points.reduce((a, b) =>
+        b.y - b.x > a.y - a.x ? b : a,
+      );
+      const bottomRight = points.reduce((a, b) =>
+        b.x + b.y > a.x + a.y ? b : a,
+      );
+
+      // Function to find midpoint between two points
+      const midpoint = (
+        p1: { x: number; y: number },
+        p2: { x: number; y: number },
+      ) => ({
+        x: (p1.x + p2.x) / 2,
+        y: (p1.y + p2.y) / 2,
+      });
+
+      const topMid = midpoint(topLeft, topRight);
+      const leftMid = midpoint(topLeft, bottomLeft);
+      const rightMid = midpoint(topRight, bottomRight);
+      const bottomMid = midpoint(bottomLeft, bottomRight);
+      switch (position) {
+        case "topLeft":
+          return topLeft;
+        case "top":
+          return topMid;
+        case "topRight":
+          return topRight;
+        case "left":
+          return leftMid;
+        case "right":
+          return rightMid;
+        case "bottomLeft":
+          return bottomLeft;
+        case "bottom":
+          return bottomMid;
+        case "bottomRight":
+          return bottomRight;
+      }
     };
+
+    function getAngleBetweenPoints(
+      point1: fabric.Point,
+      point2: fabric.Point,
+    ): number {
+      // Calculate the differences in x and y coordinates
+      const dx = point2.x - point1.x;
+      const dy = point2.y - point1.y;
+
+      // Calculate the angle using Math.atan2
+      let angle = Math.atan2(dy, dx);
+
+      // Convert the angle from radians to degrees
+      angle = angle * (180 / Math.PI);
+
+      // Normalize the angle to be between 0 and 360 degrees
+      if (angle < 0) {
+        angle += 360;
+      }
+
+      return angle;
+    }
 
     const addCornerObjectToPolygon = useCallback(
       (
+        id: string,
         polygon: fabric.Object,
         index: number,
         scaledCoords: {
@@ -269,37 +331,171 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           y: number;
         }[],
         size?: number,
+        position?:
+          | "topLeft"
+          | "top"
+          | "topRight"
+          | "left"
+          | "right"
+          | "bottomLeft"
+          | "bottom"
+          | "bottomRight",
+        color?: string,
       ) => {
         if (!editor?.canvas) return;
+        if (!color) color = "green";
+        const _size = size ?? 0;
+        const polygonCoords = findPositionCoords(
+          scaledCoords,
+          position ?? "bottomRight",
+        );
 
-        const cornerObject = new CustomCornerObject({
-          number: index + 1,
-          size,
+        const [leftCircleAndTextCoord, topCircleAndTextCoord] =
+          fabricUtils.getLeftAndTopCircleAndTextCoords(
+            position ?? "bottomRight",
+            _size,
+            polygonCoords,
+            true,
+          );
+
+        const pointerAngle =
+          getAngleBetweenPoints(
+            new fabric.Point(leftCircleAndTextCoord, topCircleAndTextCoord),
+            polygon.getCenterPoint(),
+          ) + 90;
+
+        // Calculate the direction vector
+        const dx = polygon.getCenterPoint().x - leftCircleAndTextCoord;
+        const dy = polygon.getCenterPoint().y - topCircleAndTextCoord;
+
+        // Calculate the unit vector
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const unitX = dx / length;
+        const unitY = dy / length;
+
+        // Calculate the new point coordinates
+
+        const circle = new fabric.Circle({
+          radius: _size / 2,
+          fill: "white",
+          stroke: color,
+          strokeWidth: 0.8,
+          originX: "center",
+          originY: "center",
+          left: leftCircleAndTextCoord,
+          top: topCircleAndTextCoord,
         });
 
-        cornerObject.set({
-          left: findBottomRight(scaledCoords).x,
-          top: findBottomRight(scaledCoords).y,
+        const text = new fabric.Text(index.toString(), {
+          fontSize: _size / 2,
+          fontFamily: "Arial",
+          originX: "center",
+          originY: "center",
+          fill: "black",
+          left: leftCircleAndTextCoord,
+          top: topCircleAndTextCoord,
         });
 
-        editor.canvas.add(cornerObject);
-
-        // Ensure the corner object moves with the polygon
-        polygon.on("moving", () => {
-          const newBounds = polygon.getBoundingRect();
-          cornerObject.set({
-            left: newBounds.left + newBounds.width,
-            top: newBounds.top + newBounds.height,
-          });
-          editor.canvas.renderAll();
+        const pointer = new fabric.Triangle({
+          width: _size / 3,
+          height: _size / 3,
+          fill: color,
+          stroke: color,
+          strokeWidth: 1,
+          originX: "center",
+          originY: "center",
+          left: fabricUtils.pointerLeft(
+            position ?? "bottomRight",
+            _size,
+            unitX,
+            polygonCoords,
+          ),
+          top: fabricUtils.pointerTop(
+            position ?? "bottomRight",
+            _size,
+            unitY,
+            polygonCoords,
+          ),
+          angle: pointerAngle,
         });
 
-        // Ensure the corner object is removed when the polygon is removed
-        polygon.on("removed", () => {
-          editor.canvas?.remove(cornerObject);
+        const group = new fabric.Group([pointer, circle, text]);
+        const positionMap = [
+          "topLeft",
+          "top",
+          "topRight",
+          "left",
+          "right",
+          "bottomLeft",
+          "bottom",
+          "bottomRight",
+        ].map((el) => {
+          return {
+            position: el,
+            coords: [
+              fabricUtils.pointerLeft(
+                el as
+                  | "topLeft"
+                  | "top"
+                  | "topRight"
+                  | "left"
+                  | "right"
+                  | "bottomLeft"
+                  | "bottom"
+                  | "bottomRight",
+                _size,
+                unitX,
+                polygonCoords,
+              ),
+              fabricUtils.pointerTop(
+                el as
+                  | "topLeft"
+                  | "top"
+                  | "topRight"
+                  | "left"
+                  | "right"
+                  | "bottomLeft"
+                  | "bottom"
+                  | "bottomRight",
+                _size,
+                unitY,
+                polygonCoords,
+              ),
+            ],
+          };
         });
+        group.on("modified", (e) => {
+          const p = e.transform?.target.getCenterPoint();
+          const newPosition = positionMap.reduce(
+            (lowestDistancePosition, currentValue) => {
+              const newPoint = new fabric.Point(p?.x ?? 0, p?.y ?? 0);
+              if (
+                (newPoint.distanceFrom(
+                  new fabric.Point(
+                    currentValue.coords[0],
+                    currentValue.coords[1],
+                  ),
+                ) ?? 0) <
+                (newPoint.distanceFrom(
+                  new fabric.Point(
+                    lowestDistancePosition.coords[0],
+                    lowestDistancePosition.coords[1],
+                  ),
+                ) ?? 0)
+              ) {
+                return currentValue;
+              } else {
+                return lowestDistancePosition;
+              }
+            },
+            positionMap[0],
+          );
+          onMovingNumberFlag?.(id, newPosition.position);
+        });
+
+        editor.canvas.add(group);
       },
-      [editor?.canvas],
+      [editor?.canvas, onMovingNumberFlag],
     );
 
     useEffect(() => {
@@ -641,6 +837,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       resetDrawingObject,
       objectHelper,
       onItemHover,
+      onSelectItem,
     ]);
 
     // Update zoom parent value
@@ -687,10 +884,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         canvas.add(polygon);
         if (item.numberFlag !== null && item.numberFlag !== undefined) {
           addCornerObjectToPolygon(
+            item.id,
             polygon,
             item.numberFlag,
             scaledCoords,
             item.numberFlagSize,
+            item.numberFlagPosition,
+            "green",
           );
         }
       });

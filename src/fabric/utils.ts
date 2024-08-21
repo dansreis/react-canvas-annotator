@@ -352,3 +352,109 @@ export const getObjectHelperCoords = (obj: fabric.Object) => {
     top: boundingRect.top + boundingRect.height,
   };
 };
+
+export const getLeftAndTopCircleAndTextCoords = (
+  pos:
+    | "topLeft"
+    | "top"
+    | "topRight"
+    | "left"
+    | "right"
+    | "bottomLeft"
+    | "bottom"
+    | "bottomRight",
+  size: number,
+  polygonCoords: { x: number; y: number },
+  includeGeneralMidOffset?: boolean,
+) => {
+  let leftCircleAndTextOffset = 0;
+  let topCircleAndTextOffset = 0;
+  const generalMidOffset = includeGeneralMidOffset === true ? 2 : 0;
+  switch (pos) {
+    case "topLeft":
+      leftCircleAndTextOffset = -size / 2;
+      topCircleAndTextOffset = -size / 2;
+      break;
+    case "top":
+      leftCircleAndTextOffset = 0;
+      topCircleAndTextOffset = -size / 2 - generalMidOffset * 2;
+      break;
+    case "topRight":
+      leftCircleAndTextOffset = +size / 2;
+      topCircleAndTextOffset = -size / 2;
+      break;
+    case "left":
+      leftCircleAndTextOffset = -size / 2 - generalMidOffset * 2;
+      topCircleAndTextOffset = 0;
+      break;
+    case "right":
+      leftCircleAndTextOffset = +size / 2 + generalMidOffset * 2;
+      topCircleAndTextOffset = 0;
+      break;
+    case "bottomLeft":
+      leftCircleAndTextOffset = -size / 2;
+      topCircleAndTextOffset = +size / 2;
+      break;
+    case "bottom":
+      leftCircleAndTextOffset = 0;
+      topCircleAndTextOffset = +size / 2 + generalMidOffset * 2;
+      break;
+    default:
+      leftCircleAndTextOffset = +size / 2;
+      topCircleAndTextOffset = +size / 2;
+  }
+  return [
+    leftCircleAndTextOffset + polygonCoords.x,
+    topCircleAndTextOffset + polygonCoords.y,
+  ];
+};
+
+export const pointerLeft = (
+  pos:
+    | "topLeft"
+    | "top"
+    | "topRight"
+    | "left"
+    | "right"
+    | "bottomLeft"
+    | "bottom"
+    | "bottomRight",
+  size: number,
+  unitX: number,
+  polygonCoords: { x: number; y: number },
+) => {
+  return (
+    getLeftAndTopCircleAndTextCoords(
+      pos ?? "bottomRight",
+      size,
+      polygonCoords,
+      true,
+    )[0] +
+    (size / 2) * unitX
+  );
+};
+
+export const pointerTop = (
+  pos:
+    | "topLeft"
+    | "top"
+    | "topRight"
+    | "left"
+    | "right"
+    | "bottomLeft"
+    | "bottom"
+    | "bottomRight",
+  size: number,
+  unitY: number,
+  polygonCoords: { x: number; y: number },
+) => {
+  return (
+    getLeftAndTopCircleAndTextCoords(
+      pos ?? "bottomRight",
+      size,
+      polygonCoords,
+      true,
+    )[1] +
+    (size / 2) * unitY
+  );
+};

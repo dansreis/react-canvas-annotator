@@ -14,4 +14,13 @@ export type CanvasObject = {
   content?: string;
   numberFlag?: number;
   numberFlagSize?: number;
+  numberFlagPosition?:
+    | "topLeft"
+    | "top"
+    | "topRight"
+    | "left"
+    | "right"
+    | "bottomLeft"
+    | "bottom"
+    | "bottomRight";
 };
