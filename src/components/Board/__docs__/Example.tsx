@@ -55,7 +55,7 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         </button>
         <button
           onClick={() => {
-            ref.current?.jumpToId("1");
+            ref.current?.jumpToId("1", false, true);
           }}
         >
           Jump to 1
