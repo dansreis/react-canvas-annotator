@@ -34,7 +34,12 @@ export type BoardActions = {
   resetZoom: () => void;
   deleteSelectedObjects: () => void;
   deleteObjectById: (id: string) => void;
-  jumpToId: (id: string, setActive?: boolean) => void;
+  jumpToId: (
+    id: string,
+    setActive?: boolean,
+    zoomInto?: boolean,
+    scaleFactorPercentage?: number,
+  ) => void;
   deselectAll: () => void;
   downloadImage: () => void;
   drawObject: (type?: "rectangle" | "polygon") => void;
@@ -88,12 +93,38 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           fabricActions.deleteObjectByName(canvas, id);
         }
       },
-      jumpToId(id: string, setActive?: boolean) {
+      jumpToId(
+        id: string,
+        setActive?: boolean,
+        zoomInto?: boolean,
+        scaleFactorPercentage?: number,
+      ) {
         const canvas = editor?.canvas;
         if (!canvas) return;
 
         const object = fabricUtils.findObjectByName(canvas, id);
         if (!object) return;
+
+        if (zoomInto === true) {
+          const boundingBox = object.getBoundingRect();
+
+          const canvasWidth = canvas.getWidth();
+          const canvasHeight = canvas.getHeight();
+
+          // Calculate the scaling factor needed to fit the polygon within the canvas
+          const scaleX = canvasWidth / boundingBox.width;
+          const scaleY = canvasHeight / boundingBox.height;
+
+          // Use the smaller scale factor to ensure the polygon fits within the canvas
+          const maxScaleFactor = Math.min(scaleX, scaleY);
+
+          // Adjust the scale factor to the desired percentage (50% in this case)
+          const adjustedScaleFactor =
+            maxScaleFactor * (scaleFactorPercentage ?? 0.3);
+
+          // Set the canvas zoom level
+          canvas.setZoom(adjustedScaleFactor);
+        }
 
         // Get the object's center point
         const objectCenter = object.getCenterPoint();
