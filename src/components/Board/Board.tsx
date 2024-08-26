@@ -106,22 +106,19 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         if (!object) return;
 
         if (zoomInto === true) {
+          canvas.setZoom(1);
           const boundingBox = object.getBoundingRect();
 
           const canvasWidth = canvas.getWidth();
           const canvasHeight = canvas.getHeight();
-
           // Calculate the scaling factor needed to fit the polygon within the canvas
           const scaleX = canvasWidth / boundingBox.width;
           const scaleY = canvasHeight / boundingBox.height;
-
           // Use the smaller scale factor to ensure the polygon fits within the canvas
           const maxScaleFactor = Math.min(scaleX, scaleY);
-
           // Adjust the scale factor to the desired percentage (50% in this case)
           const adjustedScaleFactor =
             maxScaleFactor * (scaleFactorPercentage ?? 0.3);
-
           // Set the canvas zoom level
           canvas.setZoom(adjustedScaleFactor);
         }
