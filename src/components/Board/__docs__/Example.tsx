@@ -8,6 +8,7 @@ const Example: FC<BoardProps> = ({ items, image }) => {
   const [isDrawingRectangle, setIsDrawingRectangle] = useState(false);
   const [currentZoom, setCurrentZoom] = useState<number | undefined>();
   const [numberFlagSize, setNumberFlagSize] = useState(15);
+  const [highlighted, setHighlighted] = useState<string | null>(null);
   const [numberFlagPosition, setNumberFlagPosition] = useState<
     | "topLeft"
     | "top"
@@ -67,6 +68,16 @@ const Example: FC<BoardProps> = ({ items, image }) => {
           }}
         >
           Show content of: 1
+        </button>
+        <button
+          onClick={() => {
+            console.log(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              ref.current?.retrieveObjectContent(highlighted as string),
+            );
+          }}
+        >
+          Retrieve current object info
         </button>
       </div>
       <div style={{ display: "flex", gap: "10px" }}>
@@ -158,6 +169,9 @@ const Example: FC<BoardProps> = ({ items, image }) => {
           onZoomChange={(v) => setCurrentZoom(v)}
           onItemHover={(item) => {
             console.log(item);
+            if (item.id) {
+              setHighlighted(item.id);
+            }
           }}
           onMovingNumberFlag={(id, newPosition) => console.log(id, newPosition)}
         />
