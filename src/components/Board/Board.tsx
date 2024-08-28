@@ -44,7 +44,9 @@ export type BoardActions = {
   downloadImage: () => void;
   drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: (includeContent?: boolean) => CanvasObject[];
-  retrieveObjectContent: (id: string) => string | null;
+  retrieveObjectContent: (
+    id: string,
+  ) => { angle: number; content: string | undefined } | null;
 };
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
@@ -74,7 +76,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         if (editor?.canvas) {
           const obj = fabricUtils.findObjectByName(editor.canvas, id);
           return obj
-            ? getObjectInfo(obj as fabricTypes.CustomObject).content ?? null
+            ? {
+                angle: obj.angle ?? 0,
+                content: getObjectInfo(obj as fabricTypes.CustomObject).content,
+              } ?? null
             : null;
         }
         return null;
