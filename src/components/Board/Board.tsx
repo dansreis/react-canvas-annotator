@@ -28,6 +28,7 @@ export type BoardProps = {
     height: number;
   }) => void;
   onItemHover?: ({ id }: { id: string | null }) => void;
+  cornerStrokeColor?: string;
 };
 
 export type BoardActions = {
@@ -62,6 +63,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       onLoadedImage,
       onItemHover,
       helper,
+      cornerStrokeColor,
     },
     ref,
   ) => {
@@ -903,6 +905,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             selectable,
             hoverCursor: item.hoverCursor,
             moveCursor: item.moveCursor,
+            cornerStrokeColor: cornerStrokeColor
+              ? cornerStrokeColor
+              : undefined,
           },
           scaledCoords.length === 4, // Is a rectangle
         );
@@ -919,6 +924,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       items,
       scaleRatio,
       addCornerObjectToPolygon,
+      cornerStrokeColor,
     ]);
 
     const renderObjectHelper = () => {
