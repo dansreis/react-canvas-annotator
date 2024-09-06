@@ -448,7 +448,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           angle: pointerAngle,
         });
 
-        const group = new fabric.Group([pointer, circle, text]);
+        const group = new fabric.Group([pointer, circle, text], {
+          name: "corner_" + item.id,
+        });
         const positionMap = [
           "topLeft",
           "top",
@@ -890,7 +892,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
       // Remove items
       itemsToRemove.forEach((item) => {
+        const objCorner = canvas
+          .getObjects()
+          .find((obj) => obj.name === "corner_" + item.name);
         canvas.remove(item);
+        objCorner && canvas.remove(objCorner);
       });
 
       items.forEach((item) => {
