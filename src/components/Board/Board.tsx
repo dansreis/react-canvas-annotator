@@ -884,15 +884,32 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     useEffect(() => {
       const canvas = editor?.canvas;
       if (!canvas) return;
+      if (!originalFabricImage) return;
 
-      const prevItems = canvas
-        .getObjects()
-        .filter((obj) => obj.name) as fabricTypes.CustomObject[];
-
+      const prevItems = canvas.getObjects();
+      console.log("prevItems", canvas.getObjects());
       // Find items to remove
-      const itemsToRemove = prevItems.filter(
-        (prevItem) => !items.some((item) => _.isEqual(item, prevItem)),
+      // debugger;
+      const itemsToRemove = _.cloneDeep(
+        prevItems.filter(
+          (prevItem) =>
+            !items.some((item) => item.id === prevItem.name) &&
+            !items.some((item) => "corner_" + item.id === prevItem.name),
+        ),
       );
+
+      const itemsToAdd = _.cloneDeep(
+        items.filter(
+          (item) => !prevItems.some((prevItem) => item.id === prevItem.name),
+        ),
+      );
+
+      // Find items to change (only border colors supported)
+      const itemsToChange = prevItems.filter((prevItem) => {
+        const item = items.find((item) => item.id === prevItem.name);
+        if (!item || item.borderColor === prevItem.stroke) return false;
+        return true;
+      });
 
       // Remove items
       itemsToRemove.forEach((item) => {
@@ -903,7 +920,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         objCorner && canvas.remove(objCorner);
       });
 
-      items.forEach((item) => {
+      itemsToAdd.forEach((item) => {
         const scaledCoords = item.coords.map((p) =>
           fabricUtils.toScaledCoord({
             cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
@@ -943,6 +960,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       scaleRatio,
       addCornerObjectToPolygon,
       cornerStrokeColor,
+      originalFabricImage,
     ]);
 
     const renderObjectHelper = () => {
