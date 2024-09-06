@@ -8,6 +8,7 @@ const Example: FC<BoardProps> = ({ items, image }) => {
   const [isDrawingRectangle, setIsDrawingRectangle] = useState(false);
   const [currentZoom, setCurrentZoom] = useState<number | undefined>();
   const [numberFlagSize, setNumberFlagSize] = useState(15);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const [numberFlagPosition, setNumberFlagPosition] = useState<
     | "topLeft"
     | "top"
@@ -72,16 +73,6 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         >
           Show content of: 1
         </button>
-        {/* <button
-          onClick={() => {
-            console.log(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ref.current?.retrieveObjectContent(),
-            );
-          }}
-        >
-          Retrieve current object info
-        </button> */}
       </div>
       <div style={{ display: "flex", gap: "10px" }}>
         <div
@@ -142,7 +133,14 @@ const Example: FC<BoardProps> = ({ items, image }) => {
           ref={ref}
           image={image}
           items={items.map((i) => {
-            return { ...i, numberFlagSize, numberFlagPosition };
+            return {
+              ...i,
+              numberFlagSize,
+              numberFlagPosition,
+              borderColor: i.id === highlightId ? "red" : i.borderColor,
+              fillColor:
+                i.id === highlightId ? "rgba(255,0,0,0.4)" : i.fillColor,
+            };
           })}
           helper={(id, content) => {
             const processContent = (c?: string) => {
@@ -168,6 +166,11 @@ const Example: FC<BoardProps> = ({ items, image }) => {
                 </button>
               </div>
             );
+          }}
+          onSelectItem={(item) => {
+            console.log(item);
+            if (!item) return;
+            setHighlightId(item?.name ?? null);
           }}
           onZoomChange={(v) => setCurrentZoom(v)}
           // onItemHover={(item) => {
