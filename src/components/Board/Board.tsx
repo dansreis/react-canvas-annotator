@@ -6,6 +6,7 @@ import { CanvasObject } from "./types";
 import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
 import * as fabricTypes from "../../fabric/types";
+import _ from "lodash";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -878,23 +879,30 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       const canvas = editor?.canvas;
       if (!canvas) return;
 
-      // Clear all objects from canvas
-      fabricActions.deleteAll(editor?.canvas);
+      const prevItems = canvas
+        .getObjects()
+        .filter((obj) => obj.name) as fabricTypes.CustomObject[];
+
+      // Find items to remove
+      const itemsToRemove = prevItems.filter(
+        (prevItem) => !items.some((item) => _.isEqual(item, prevItem)),
+      );
+
+      // Remove items
+      itemsToRemove.forEach((item) => {
+        canvas.remove(item);
+      });
 
       items.forEach((item) => {
         const scaledCoords = item.coords.map((p) =>
           fabricUtils.toScaledCoord({
             cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
-            iInfo: {
-              width: imageSize.width,
-              height: imageSize.height,
-            },
+            iInfo: { width: imageSize.width, height: imageSize.height },
             coord: p,
             scaleRatio,
           }),
         );
 
-        const selectable = item.selectable ?? true;
         const polygon = fabricUtils.createControllableCustomObject(
           fabric.Polygon,
           scaledCoords,
@@ -902,7 +910,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             name: item.id,
             stroke: item.borderColor,
             fill: item.fillColor,
-            selectable,
+            selectable: item.selectable ?? true,
             hoverCursor: item.hoverCursor,
             moveCursor: item.moveCursor,
             cornerStrokeColor: cornerStrokeColor
