@@ -453,7 +453,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         });
 
         const group = new fabric.Group([pointer, circle, text], {
-          name: "corner_" + item.id,
+          name: "corner_" + item.id + "_" + index.toString(),
         });
         const positionMap = [
           "topLeft",
@@ -893,7 +893,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         prevItems.filter(
           (prevItem) =>
             !items.some((item) => item.id === prevItem.name) &&
-            !items.some((item) => "corner_" + item.id === prevItem.name),
+            !items.some((item) => prevItem.name?.includes("corner_" + item.id)),
         ),
       );
 
@@ -908,7 +908,15 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         const canvasItem = canvas
           .getObjects()
           .find((obj) => obj.name === item.id) as fabric.Object;
-        return canvasItem && canvasItem.stroke !== item.borderColor;
+        const canvasItemFlagNote = canvas
+          .getObjects()
+          .find((obj) =>
+            item.id.includes("corner_" + obj.name),
+          ) as fabric.Object;
+        return (
+          (canvasItem && canvasItem.stroke !== item.borderColor) ||
+          canvasItemFlagNote.name?.endsWith("_" + item.numberFlag)
+        );
       });
 
       // Implementation for changing border colors
