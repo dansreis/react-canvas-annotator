@@ -156,6 +156,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         }
       },
       drawObject(type?: "rectangle" | "polygon") {
+        if (!type) {
+          resetDrawingObject();
+          return;
+        }
         const isDrawing = !drawingObject?.isDrawing;
         if (isDrawing) {
           const polygonId = uuidv4();
