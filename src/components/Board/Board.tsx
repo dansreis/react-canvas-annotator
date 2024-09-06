@@ -887,7 +887,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       if (!originalFabricImage) return;
 
       const prevItems = canvas.getObjects();
-      console.log("prevItems", canvas.getObjects());
       // Find items to remove
       // debugger;
       const itemsToRemove = _.cloneDeep(
@@ -905,11 +904,31 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       );
 
       // Find items to change (only border colors supported)
-      const itemsToChange = prevItems.filter((prevItem) => {
-        const item = items.find((item) => item.id === prevItem.name);
-        if (!item || item.borderColor === prevItem.stroke) return false;
-        return true;
+      const itemsToChange = items.filter((item) => {
+        const canvasItem = canvas
+          .getObjects()
+          .find((obj) => obj.name === item.id) as fabric.Object;
+        return canvasItem && canvasItem.stroke !== item.borderColor;
       });
+
+      // Implementation for changing border colors
+      itemsToChange.forEach((item) => {
+        const canvasItem = canvas
+          .getObjects()
+          .find((obj) => obj.name === item.id) as fabric.Object;
+        if (canvasItem) {
+          // Update the border color
+          canvasItem.stroke = item.borderColor;
+          canvasItem.fill = item.fillColor;
+
+          // Mark the object as dirty to ensure it gets redrawn
+          canvasItem.setCoords();
+          canvasItem.dirty = true;
+        }
+      });
+
+      // After making changes, render the canvas
+      canvas.renderAll();
 
       // Remove items
       itemsToRemove.forEach((item) => {

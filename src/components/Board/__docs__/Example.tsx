@@ -137,7 +137,9 @@ const Example: FC<BoardProps> = ({ items, image }) => {
               ...i,
               numberFlagSize,
               numberFlagPosition,
-              fillColor: i.id === highlightId ? "red" : i.fillColor,
+              borderColor: i.id === highlightId ? "red" : i.borderColor,
+              fillColor:
+                i.id === highlightId ? "rgba(255,0,0,0.4)" : i.fillColor,
             };
           })}
           helper={(id, content) => {
