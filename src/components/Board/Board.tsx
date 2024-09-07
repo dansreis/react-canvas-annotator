@@ -453,7 +453,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         });
 
         const group = new fabric.Group([pointer, circle, text], {
-          name: "corner_" + item.id,
+          name: "corner_" + item.id + "_" + index.toString(),
         });
         const positionMap = [
           "topLeft",
@@ -893,7 +893,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         prevItems.filter(
           (prevItem) =>
             !items.some((item) => item.id === prevItem.name) &&
-            !items.some((item) => "corner_" + item.id === prevItem.name),
+            !items.some((item) => prevItem.name?.includes("corner_" + item.id)),
         ),
       );
 
@@ -908,7 +908,15 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         const canvasItem = canvas
           .getObjects()
           .find((obj) => obj.name === item.id) as fabric.Object;
-        return canvasItem && canvasItem.stroke !== item.borderColor;
+        const canvasItemFlagNote = canvas
+          .getObjects()
+          .find((obj) =>
+            item.id.includes("corner_" + obj.name),
+          ) as fabric.Object;
+        return (
+          (canvasItem && canvasItem.stroke !== item.borderColor) ||
+          canvasItemFlagNote.name?.endsWith("_" + item.numberFlag)
+        );
       });
 
       // Implementation for changing border colors
@@ -949,26 +957,65 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           }),
         );
 
-        const polygon = fabricUtils.createControllableCustomObject(
-          fabric.Polygon,
-          scaledCoords,
-          {
-            name: item.id,
-            stroke: item.borderColor,
+        let fabricObject;
+
+        if (scaledCoords.length === 4) {
+          // This is a rectangle (potentially rotated)
+          const [p1, p2, p3, p4] = scaledCoords;
+
+          // Calculate width and height
+          const width = Math.sqrt(
+            Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
+          );
+          const height = Math.sqrt(
+            Math.pow(p4.x - p1.x, 2) + Math.pow(p4.y - p1.y, 2),
+          );
+
+          // Calculate center point
+          const centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
+          const centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
+
+          // Calculate rotation angle
+          const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
+
+          fabricObject = new fabric.Rect({
+            left: centerX,
+            top: centerY,
+            width: width,
+            height: height,
             fill: item.fillColor,
+            stroke: item.borderColor,
+            strokeWidth: 1,
             selectable: item.selectable ?? true,
             hoverCursor: item.hoverCursor,
             moveCursor: item.moveCursor,
-            cornerStrokeColor: cornerStrokeColor
-              ? cornerStrokeColor
-              : undefined,
-          },
-          scaledCoords.length === 4, // Is a rectangle
-        );
+            name: item.id,
+            angle: angle,
+            originX: "center",
+            originY: "center",
+          });
+        } else {
+          // This is a polygon
+          fabricObject = fabricUtils.createControllableCustomObject(
+            fabric.Polygon,
+            scaledCoords,
+            {
+              name: item.id,
+              stroke: item.borderColor,
+              fill: item.fillColor,
+              selectable: item.selectable ?? true,
+              hoverCursor: item.hoverCursor,
+              moveCursor: item.moveCursor,
+              cornerStrokeColor: cornerStrokeColor
+                ? cornerStrokeColor
+                : undefined,
+            },
+          );
+        }
 
-        canvas.add(polygon);
+        canvas.add(fabricObject);
         if (item.numberFlag !== null && item.numberFlag !== undefined) {
-          addCornerObjectToPolygon(item, polygon, scaledCoords, "green");
+          addCornerObjectToPolygon(item, fabricObject, scaledCoords, "green");
         }
       });
     }, [
