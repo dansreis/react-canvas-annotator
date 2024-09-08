@@ -7,6 +7,7 @@ import * as fabricUtils from "../../fabric/utils";
 import * as fabricActions from "../../fabric/actions";
 import * as fabricTypes from "../../fabric/types";
 import _ from "lodash";
+import { Canvas } from "fabric/fabric-impl";
 
 export type BoardProps = {
   items: CanvasObject[];
@@ -156,6 +157,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         }
       },
       drawObject(type?: "rectangle" | "polygon") {
+        setSelectedObjectId(null);
+        setObjectHelper({ enabled: false, top: 0, left: 0 });
         if (!type) {
           resetDrawingObject();
           return;
@@ -176,7 +179,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       downloadImage() {
         fabricActions.canvasImageDownload(image);
       },
-      retrieveObjects: (includeContent: boolean = true) => {
+      retrieveObjects: (includeContent: boolean = false) => {
         const canvas = editor?.canvas;
         if (canvas) {
           const customObjects =
@@ -194,7 +197,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
                 fillColor: "TODO_color",
                 value: "TODO_value",
                 coords: info.coords,
-                content: info.content,
+                content: info.content ?? undefined,
               };
             });
         }
@@ -544,6 +547,203 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       [editor?.canvas, onMovingNumberFlag],
     );
 
+    const loadItems = useCallback(
+      (canvas: Canvas) => {
+        const prevItems = canvas.getObjects();
+        // Find items to remove
+        // debugger;
+        const itemsToRemove = prevItems.filter(
+          (prevItem) =>
+            !items.some((item) => item.id === prevItem?.name) &&
+            !items.some((item) => prevItem?.name?.includes("_" + item.id)),
+        );
+
+        const itemsToAdd = _.cloneDeep(
+          items.filter(
+            (item) => !prevItems.some((prevItem) => item.id === prevItem?.name),
+          ),
+        );
+
+        // Find items to change (only border colors supported)
+        items.forEach((item) => {
+          if (itemsToAdd.includes(item)) {
+            return;
+          }
+
+          const canvasItem = canvas
+            .getObjects()
+            .find((obj) => obj?.name === item.id) as fabric.Object;
+          if (!canvasItem) return;
+          const canvasItemFlagNote = canvas
+            .getObjects()
+            .find((obj) => obj?.name?.includes("_" + item.id)) as fabric.Object;
+          const scaledCoords = item.coords.map((p) =>
+            fabricUtils.toScaledCoord({
+              cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
+              iInfo: { width: imageSize.width, height: imageSize.height },
+              coord: p,
+              scaleRatio,
+            }),
+          );
+          if (scaledCoords.length < 4) return;
+
+          const [p1, p2, p3, p4] = scaledCoords;
+          const width = Math.sqrt(
+            Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
+          );
+          const height = Math.sqrt(
+            Math.pow(p4.x - p1.x, 2) + Math.pow(p4.y - p1.y, 2),
+          );
+          const centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
+          const centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
+          const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
+          const fabricObject = new fabric.Rect({
+            left: centerX,
+            top: centerY,
+            width: width,
+            height: height,
+            fill: item.fillColor,
+            stroke: item.borderColor,
+            strokeWidth: 1,
+            selectable: item.selectable ?? true,
+            hoverCursor: item.hoverCursor,
+            moveCursor: item.moveCursor,
+            name: item.id,
+            angle: angle,
+            originX: "center",
+            originY: "center",
+          });
+
+          if (
+            // numberFlagPosition
+            !canvasItemFlagNote?.name?.includes(
+              "_position" + item.numberFlagPosition,
+            ) ||
+            // numberFlag
+            !canvasItemFlagNote?.name?.endsWith("_" + item.numberFlag) ||
+            // Coords
+            fabricObject.getCoords() !== canvasItem.getCoords() ||
+            // Numberflagsize
+            !canvasItemFlagNote?.name?.includes(
+              "_size" + item.numberFlagSize,
+            ) ||
+            // Bordercolor
+            canvasItem.stroke !== item.borderColor ||
+            // Fillcolor
+            canvasItem.fill !== item.fillColor
+          ) {
+            itemsToRemove.push(canvasItem);
+            if (canvasItemFlagNote) {
+              itemsToRemove.push(canvasItemFlagNote);
+            }
+            itemsToAdd.push(item);
+          }
+        });
+
+        // Remove items
+        itemsToRemove.forEach((item) => {
+          const objCorner = canvas
+            .getObjects()
+            .find((obj) => obj?.name?.endsWith("_" + item.name));
+          canvas.remove(item);
+          objCorner && canvas.remove(objCorner);
+        });
+
+        itemsToAdd.forEach((item) => {
+          const scaledCoords = item.coords.map((p) =>
+            fabricUtils.toScaledCoord({
+              cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
+              iInfo: { width: imageSize.width, height: imageSize.height },
+              coord: p,
+              scaleRatio,
+            }),
+          );
+
+          let fabricObject;
+
+          if (scaledCoords.length === 4) {
+            const [p1, p2, p3, p4] = scaledCoords;
+            const width = Math.sqrt(
+              Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
+            );
+            const height = Math.sqrt(
+              Math.pow(p4.x - p1.x, 2) + Math.pow(p4.y - p1.y, 2),
+            );
+            const centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
+            const centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
+            const angle =
+              Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
+            fabricObject = new fabric.Rect({
+              left: centerX,
+              top: centerY,
+              width: width,
+              height: height,
+              fill: item.fillColor,
+              stroke: item.borderColor,
+              strokeWidth: 1,
+              selectable: item.selectable ?? true,
+              hoverCursor: item.hoverCursor,
+              moveCursor: item.moveCursor,
+              cornerStrokeColor: cornerStrokeColor
+                ? cornerStrokeColor
+                : undefined,
+              name: item.id,
+              angle: angle,
+              originX: "center",
+              originY: "center",
+            });
+          } else {
+            // This is a polygon
+            fabricObject = fabricUtils.createControllableCustomObject(
+              fabric.Polygon,
+              scaledCoords,
+              {
+                name: item.id,
+                stroke: item.borderColor,
+                fill: item.fillColor,
+                selectable: item.selectable ?? true,
+                hoverCursor: item.hoverCursor,
+                moveCursor: item.moveCursor,
+                cornerStrokeColor: cornerStrokeColor
+                  ? cornerStrokeColor
+                  : undefined,
+              },
+            );
+          }
+
+          canvas.add(fabricObject);
+          if (item.numberFlag !== null && item.numberFlag !== undefined) {
+            addCornerObjectToPolygon(item, fabricObject, scaledCoords, "green");
+          }
+          // After making changes, render the canvas
+          canvas.renderAll();
+          if (selectedObjectId) {
+            const objectToSelect = canvas
+              .getObjects()
+              .find((obj) => obj.name === selectedObjectId);
+            if (objectToSelect) {
+              canvas.setActiveObject(objectToSelect);
+              canvas.requestRenderAll();
+            }
+          }
+        });
+      },
+      [
+        addCornerObjectToPolygon,
+        cornerStrokeColor,
+        imageSize.height,
+        imageSize.width,
+        items,
+        scaleRatio,
+        selectedObjectId,
+      ],
+    );
+
+    useEffect(() => {
+      if (!editor?.canvas) return;
+      loadItems(editor.canvas);
+    }, [editor?.canvas, loadItems, scaleRatio]);
+
     useEffect(() => {
       const parentCanvasElement = document.getElementById(
         "react-annotator-canvas",
@@ -571,16 +771,16 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           setOriginalFabricImage(img);
 
           const { canvas } = editor;
-          const scaleRatio = Math.min(
+          const tempScaleRatio = Math.min(
             (canvas.width ?? 1) / (img.width ?? 1),
             (canvas.height ?? 1) / (img.height ?? 1),
           );
           setImageSize({ width: img.width ?? 0, height: img.height ?? 0 });
 
-          setScaleRation(scaleRatio);
+          setScaleRation(tempScaleRatio);
           canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
-            scaleX: scaleRatio,
-            scaleY: scaleRatio,
+            scaleX: tempScaleRatio,
+            scaleY: tempScaleRatio,
             left: (canvas.width ?? 1) / 2,
             top: (canvas.height ?? 1) / 2,
             originX: "middle",
@@ -886,6 +1086,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       objectHelper,
       onItemHover,
       onSelectItem,
+      loadItems,
+      scaleRatio,
     ]);
 
     // Update zoom parent value
@@ -903,185 +1105,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         return;
       }
       setSavedItems(items);
-      const prevItems = canvas.getObjects();
-      // Find items to remove
-      // debugger;
-      const itemsToRemove = prevItems.filter(
-        (prevItem) =>
-          !items.some((item) => item.id === prevItem?.name) &&
-          !items.some((item) => prevItem?.name?.includes("_" + item.id)),
-      );
-
-      const itemsToAdd = _.cloneDeep(
-        items.filter(
-          (item) => !prevItems.some((prevItem) => item.id === prevItem?.name),
-        ),
-      );
-
-      // Find items to change (only border colors supported)
-      items.forEach((item) => {
-        if (itemsToAdd.includes(item)) {
-          return;
-        }
-        const canvasItem = canvas
-          .getObjects()
-          .find((obj) => obj?.name === item.id) as fabric.Object;
-        if (!canvasItem) return;
-        const canvasItemFlagNote = canvas
-          .getObjects()
-          .find((obj) => obj?.name?.includes("_" + item.id)) as fabric.Object;
-        const scaledCoords = item.coords.map((p) =>
-          fabricUtils.toScaledCoord({
-            cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
-            iInfo: { width: imageSize.width, height: imageSize.height },
-            coord: p,
-            scaleRatio,
-          }),
-        );
-
-        const [p1, p2, p3, p4] = scaledCoords;
-        const width = Math.sqrt(
-          Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
-        );
-        const height = Math.sqrt(
-          Math.pow(p4.x - p1.x, 2) + Math.pow(p4.y - p1.y, 2),
-        );
-        const centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
-        const centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
-        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
-        const fabricObject = new fabric.Rect({
-          left: centerX,
-          top: centerY,
-          width: width,
-          height: height,
-          fill: item.fillColor,
-          stroke: item.borderColor,
-          strokeWidth: 1,
-          selectable: item.selectable ?? true,
-          hoverCursor: item.hoverCursor,
-          moveCursor: item.moveCursor,
-          name: item.id,
-          angle: angle,
-          originX: "center",
-          originY: "center",
-        });
-
-        if (
-          // numberFlagPosition
-          !canvasItemFlagNote?.name?.includes(
-            "_position" + item.numberFlagPosition,
-          ) ||
-          // numberFlag
-          !canvasItemFlagNote?.name?.endsWith("_" + item.numberFlag) ||
-          // Coords
-          fabricObject.getCoords() !== canvasItem.getCoords() ||
-          // Numberflagsize
-          !canvasItemFlagNote?.name?.includes("_size" + item.numberFlagSize) ||
-          // Bordercolor
-          canvasItem.stroke !== item.borderColor ||
-          // Fillcolor
-          canvasItem.fill !== item.fillColor
-        ) {
-          itemsToRemove.push(canvasItem);
-          itemsToRemove.push(canvasItemFlagNote);
-          itemsToAdd.push(item);
-        }
-      });
-      // Remove items
-      itemsToRemove.forEach((item) => {
-        const objCorner = canvas
-          .getObjects()
-          .find((obj) => obj?.name?.endsWith("_" + item.name));
-        canvas.remove(item);
-        objCorner && canvas.remove(objCorner);
-      });
-
-      itemsToAdd.forEach((item) => {
-        const scaledCoords = item.coords.map((p) =>
-          fabricUtils.toScaledCoord({
-            cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
-            iInfo: { width: imageSize.width, height: imageSize.height },
-            coord: p,
-            scaleRatio,
-          }),
-        );
-
-        let fabricObject;
-
-        if (scaledCoords.length === 4) {
-          const [p1, p2, p3, p4] = scaledCoords;
-          const width = Math.sqrt(
-            Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
-          );
-          const height = Math.sqrt(
-            Math.pow(p4.x - p1.x, 2) + Math.pow(p4.y - p1.y, 2),
-          );
-          const centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
-          const centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
-          const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
-          fabricObject = new fabric.Rect({
-            left: centerX,
-            top: centerY,
-            width: width,
-            height: height,
-            fill: item.fillColor,
-            stroke: item.borderColor,
-            strokeWidth: 1,
-            selectable: item.selectable ?? true,
-            hoverCursor: item.hoverCursor,
-            moveCursor: item.moveCursor,
-            name: item.id,
-            angle: angle,
-            originX: "center",
-            originY: "center",
-          });
-        } else {
-          // This is a polygon
-          fabricObject = fabricUtils.createControllableCustomObject(
-            fabric.Polygon,
-            scaledCoords,
-            {
-              name: item.id,
-              stroke: item.borderColor,
-              fill: item.fillColor,
-              selectable: item.selectable ?? true,
-              hoverCursor: item.hoverCursor,
-              moveCursor: item.moveCursor,
-              cornerStrokeColor: cornerStrokeColor
-                ? cornerStrokeColor
-                : undefined,
-            },
-          );
-        }
-
-        canvas.add(fabricObject);
-        if (item.numberFlag !== null && item.numberFlag !== undefined) {
-          addCornerObjectToPolygon(item, fabricObject, scaledCoords, "green");
-        }
-        // After making changes, render the canvas
-        canvas.renderAll();
-        if (selectedObjectId) {
-          const objectToSelect = canvas
-            .getObjects()
-            .find((obj) => obj.name === selectedObjectId);
-          if (objectToSelect) {
-            canvas.setActiveObject(objectToSelect);
-            canvas.requestRenderAll();
-          }
-        }
-      });
-    }, [
-      editor?.canvas,
-      imageSize.width,
-      imageSize.height,
-      items,
-      scaleRatio,
-      addCornerObjectToPolygon,
-      cornerStrokeColor,
-      originalFabricImage,
-      savedItems,
-      selectedObjectId,
-    ]);
+      setObjectHelper({ enabled: false, top: 0, left: 0 });
+      loadItems(canvas);
+    }, [editor?.canvas, items, loadItems, originalFabricImage, savedItems]);
 
     const renderObjectHelper = () => {
       if (
