@@ -204,6 +204,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
     const { editor, onReady } = useFabricJSEditor();
 
+    const [savedItems, setSavedItems] = useState<CanvasObject[]>([]);
+    const [selectedObjectId, setSelectedObjectId] = useState<string | null>(
+      null,
+    );
+
     const [originalFabricImage, setOriginalFabricImage] =
       useState<fabric.Image>();
 
@@ -453,7 +458,13 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         });
 
         const group = new fabric.Group([pointer, circle, text], {
-          name: "corner_" + item.id + "_" + index.toString(),
+          name:
+            "corner_position" +
+            position +
+            "_size" +
+            item.numberFlagSize +
+            "_" +
+            item.id,
         });
         const positionMap = [
           "topLeft",
@@ -824,6 +835,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         const isDrawing = this.drawingObject?.isDrawing ?? false;
         if (selected && !isDrawing) {
           updateObjectHelper(selected);
+          setSelectedObjectId(selected.name ?? null);
         }
         onSelectItem && selected && onSelectItem(selected);
       };
@@ -839,6 +851,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         function (this: fabricTypes.CanvasAnnotationState, _opt) {
           // const selectedObject = opt.deselected?.[0];
           setObjectHelper({ enabled: false, top: 0, left: 0 });
+          setSelectedObjectId(null);
           onSelectItem && onSelectItem(null);
         },
       );
@@ -885,64 +898,100 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       const canvas = editor?.canvas;
       if (!canvas) return;
       if (!originalFabricImage) return;
-
+      // debugger;
+      if (_.isEqual(items, savedItems)) {
+        return;
+      }
+      setSavedItems(items);
       const prevItems = canvas.getObjects();
       // Find items to remove
       // debugger;
-      const itemsToRemove = _.cloneDeep(
-        prevItems.filter(
-          (prevItem) =>
-            !items.some((item) => item.id === prevItem.name) &&
-            !items.some((item) => prevItem.name?.includes("corner_" + item.id)),
-        ),
+      const itemsToRemove = prevItems.filter(
+        (prevItem) =>
+          !items.some((item) => item.id === prevItem?.name) &&
+          !items.some((item) => prevItem?.name?.includes("_" + item.id)),
       );
 
       const itemsToAdd = _.cloneDeep(
         items.filter(
-          (item) => !prevItems.some((prevItem) => item.id === prevItem.name),
+          (item) => !prevItems.some((prevItem) => item.id === prevItem?.name),
         ),
       );
 
       // Find items to change (only border colors supported)
-      const itemsToChange = items.filter((item) => {
+      items.forEach((item) => {
+        if (itemsToAdd.includes(item)) {
+          return;
+        }
         const canvasItem = canvas
           .getObjects()
-          .find((obj) => obj.name === item.id) as fabric.Object;
+          .find((obj) => obj?.name === item.id) as fabric.Object;
+        if (!canvasItem) return;
         const canvasItemFlagNote = canvas
           .getObjects()
-          .find((obj) =>
-            item.id.includes("corner_" + obj.name),
-          ) as fabric.Object;
-        return (
-          (canvasItem && canvasItem.stroke !== item.borderColor) ||
-          canvasItemFlagNote.name?.endsWith("_" + item.numberFlag)
+          .find((obj) => obj?.name?.includes("_" + item.id)) as fabric.Object;
+        const scaledCoords = item.coords.map((p) =>
+          fabricUtils.toScaledCoord({
+            cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
+            iInfo: { width: imageSize.width, height: imageSize.height },
+            coord: p,
+            scaleRatio,
+          }),
         );
-      });
 
-      // Implementation for changing border colors
-      itemsToChange.forEach((item) => {
-        const canvasItem = canvas
-          .getObjects()
-          .find((obj) => obj.name === item.id) as fabric.Object;
-        if (canvasItem) {
-          // Update the border color
-          canvasItem.stroke = item.borderColor;
-          canvasItem.fill = item.fillColor;
+        const [p1, p2, p3, p4] = scaledCoords;
+        const width = Math.sqrt(
+          Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
+        );
+        const height = Math.sqrt(
+          Math.pow(p4.x - p1.x, 2) + Math.pow(p4.y - p1.y, 2),
+        );
+        const centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
+        const centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
+        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
+        const fabricObject = new fabric.Rect({
+          left: centerX,
+          top: centerY,
+          width: width,
+          height: height,
+          fill: item.fillColor,
+          stroke: item.borderColor,
+          strokeWidth: 1,
+          selectable: item.selectable ?? true,
+          hoverCursor: item.hoverCursor,
+          moveCursor: item.moveCursor,
+          name: item.id,
+          angle: angle,
+          originX: "center",
+          originY: "center",
+        });
 
-          // Mark the object as dirty to ensure it gets redrawn
-          canvasItem.setCoords();
-          canvasItem.dirty = true;
+        if (
+          // numberFlagPosition
+          !canvasItemFlagNote?.name?.includes(
+            "_position" + item.numberFlagPosition,
+          ) ||
+          // numberFlag
+          !canvasItemFlagNote?.name?.endsWith("_" + item.numberFlag) ||
+          // Coords
+          fabricObject.getCoords() !== canvasItem.getCoords() ||
+          // Numberflagsize
+          !canvasItemFlagNote?.name?.includes("_size" + item.numberFlagSize) ||
+          // Bordercolor
+          canvasItem.stroke !== item.borderColor ||
+          // Fillcolor
+          canvasItem.fill !== item.fillColor
+        ) {
+          itemsToRemove.push(canvasItem);
+          itemsToRemove.push(canvasItemFlagNote);
+          itemsToAdd.push(item);
         }
       });
-
-      // After making changes, render the canvas
-      canvas.renderAll();
-
       // Remove items
       itemsToRemove.forEach((item) => {
         const objCorner = canvas
           .getObjects()
-          .find((obj) => obj.name === "corner_" + item.name);
+          .find((obj) => obj?.name?.endsWith("_" + item.name));
         canvas.remove(item);
         objCorner && canvas.remove(objCorner);
       });
@@ -960,24 +1009,16 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         let fabricObject;
 
         if (scaledCoords.length === 4) {
-          // This is a rectangle (potentially rotated)
           const [p1, p2, p3, p4] = scaledCoords;
-
-          // Calculate width and height
           const width = Math.sqrt(
             Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
           );
           const height = Math.sqrt(
             Math.pow(p4.x - p1.x, 2) + Math.pow(p4.y - p1.y, 2),
           );
-
-          // Calculate center point
           const centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
           const centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
-
-          // Calculate rotation angle
           const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
-
           fabricObject = new fabric.Rect({
             left: centerX,
             top: centerY,
@@ -1017,6 +1058,17 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         if (item.numberFlag !== null && item.numberFlag !== undefined) {
           addCornerObjectToPolygon(item, fabricObject, scaledCoords, "green");
         }
+        // After making changes, render the canvas
+        canvas.renderAll();
+        if (selectedObjectId) {
+          const objectToSelect = canvas
+            .getObjects()
+            .find((obj) => obj.name === selectedObjectId);
+          if (objectToSelect) {
+            canvas.setActiveObject(objectToSelect);
+            canvas.requestRenderAll();
+          }
+        }
       });
     }, [
       editor?.canvas,
@@ -1027,6 +1079,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       addCornerObjectToPolygon,
       cornerStrokeColor,
       originalFabricImage,
+      savedItems,
+      selectedObjectId,
     ]);
 
     const renderObjectHelper = () => {

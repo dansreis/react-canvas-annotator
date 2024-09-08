@@ -132,9 +132,10 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         <Board
           ref={ref}
           image={image}
-          items={items.map((i) => {
+          items={items.map((i, index) => {
             return {
               ...i,
+              numberFlag: index,
               numberFlagSize,
               numberFlagPosition,
               borderColor: i.id === highlightId ? "red" : i.borderColor,
@@ -168,7 +169,6 @@ const Example: FC<BoardProps> = ({ items, image }) => {
             );
           }}
           onSelectItem={(item) => {
-            console.log(item);
             if (!item) return;
             setHighlightId(item?.name ?? null);
           }}

@@ -316,13 +316,6 @@ type Story = StoryObj<typeof Example>;
 export const Main: Story = {
   args: {
     image: { name: "holder-min", src: "holder-min.jpg" },
-    items: ITEMS.map((el, index) => {
-      return {
-        ...el,
-        numberFlag: index,
-        numberFlagSize: 5,
-        numberFlagPosition: "topLeft",
-      };
-    }),
+    items: ITEMS,
   },
 };
