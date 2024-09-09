@@ -83,6 +83,9 @@ export const toScaledCoord = ({
  */
 export const pointsInCanvas = (obj?: fabricTypes.CustomObject) => {
   if (!obj) return [];
+  if (!obj.points) {
+    return obj.getCoords(true);
+  }
   return (
     obj.points?.map((p) => {
       const matrix = obj.calcOwnMatrix();
