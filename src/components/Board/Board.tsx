@@ -158,11 +158,17 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       },
       drawObject(type?: "rectangle" | "polygon") {
         setSelectedObjectId(null);
+        const canvas = editor?.canvas;
+        canvas?.getObjects().forEach((obj) => {
+          obj.off("deselected");
+        });
         setObjectHelper({ enabled: false, top: 0, left: 0 });
         if (!type) {
           resetDrawingObject();
+          setIsInDrawingMode(false);
           return;
         }
+        setIsInDrawingMode(true);
         const isDrawing = !drawingObject?.isDrawing;
         if (isDrawing) {
           const polygonId = uuidv4();
@@ -227,6 +233,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       width: 0,
       height: 0,
     });
+
+    const [isInDrawingMode, setIsInDrawingMode] = useState(false);
 
     const [objectHelper, setObjectHelper] = useState<{
       left: number;
@@ -915,6 +923,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             console.log("Draw Rectangle - DOWN");
             resetDrawingObject();
             updateObjectHelper(opt.target);
+            opt.target?.on("deselected", function () {
+              editor.canvas.setActiveObject(opt.target!);
+            });
           }
         },
       );
@@ -1030,9 +1041,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         this: fabricTypes.CanvasAnnotationState,
         opt: fabric.IEvent<MouseEvent>,
       ) {
+        if (isInDrawingMode) return;
+        const isDrawing = this.drawingObject?.isDrawing ?? false;
         setObjectHelper({ ...objectHelper, enabled: false });
         const selected = opt.selected?.[0];
-        const isDrawing = this.drawingObject?.isDrawing ?? false;
         if (selected && !isDrawing) {
           updateObjectHelper(selected);
           setSelectedObjectId(selected.name ?? null);
@@ -1050,6 +1062,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         function (this: fabricTypes.CanvasAnnotationState, _opt) {
           // const selectedObject = opt.deselected?.[0];
+          if (isInDrawingMode) return;
           setObjectHelper({ enabled: false, top: 0, left: 0 });
           setSelectedObjectId(null);
           onSelectItem && onSelectItem(null);
@@ -1088,6 +1101,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       onSelectItem,
       loadItems,
       scaleRatio,
+      isInDrawingMode,
     ]);
 
     // Update zoom parent value
