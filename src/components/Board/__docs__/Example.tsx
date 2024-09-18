@@ -61,6 +61,20 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         </button>
         <button
           onClick={() => {
+            const annotations = ref.current?.retrieveObjects();
+            console.log(
+              ref.current?.getAnnotatedImageAsBase64(
+                annotations
+                  ?.filter((el) => el.id.startsWith("corner"))
+                  .map((el) => el.id),
+              ),
+            );
+          }}
+        >
+          Output image as base64 to console
+        </button>
+        <button
+          onClick={() => {
             const asd = ref.current?.retrieveObjects();
             console.log(asd);
           }}
