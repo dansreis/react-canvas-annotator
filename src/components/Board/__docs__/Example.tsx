@@ -47,7 +47,16 @@ const Example: FC<BoardProps> = ({ items, image }) => {
         >
           Draw Rectangle [{isDrawingRectangle ? "ON" : "OFF"}]
         </button>
-        <button onClick={() => ref.current?.downloadImage()}>
+        <button
+          onClick={() => {
+            const annotations = ref.current?.retrieveObjects();
+            ref.current?.downloadImage(
+              annotations
+                ?.filter((el) => el.id.startsWith("corner"))
+                .map((el) => el.id),
+            );
+          }}
+        >
           Download Image
         </button>
         <button

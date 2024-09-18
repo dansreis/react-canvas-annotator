@@ -44,7 +44,7 @@ export type BoardActions = {
     scaleFactorPercentage?: number,
   ) => void;
   deselectAll: () => void;
-  downloadImage: () => void;
+  downloadImage: (ids?: string[]) => void;
   drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: (includeContent?: boolean) => CanvasObject[];
   retrieveObjectContent: (
@@ -182,8 +182,57 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           resetDrawingObject();
         }
       },
-      downloadImage() {
-        fabricActions.canvasImageDownload(image);
+      downloadImage(annotationIds?: string[]) {
+        if (editor?.canvas) {
+          const canvas = editor.canvas;
+
+          // Store the original object states
+          const originalStates = canvas.getObjects().map((obj) => ({
+            object: obj,
+            visible: obj.visible,
+          }));
+
+          // Hide all objects except the background image and specified annotations
+          canvas.getObjects().forEach((obj) => {
+            if (obj.name === "backgroundImage") {
+              obj.visible = true;
+            } else if (
+              annotationIds &&
+              annotationIds.includes(obj.name as string)
+            ) {
+              obj.visible = true;
+            } else {
+              obj.visible = false;
+            }
+          });
+
+          // Render the canvas
+          canvas.renderAll();
+
+          // Get the canvas element
+          const canvasElement = canvas.getElement();
+
+          // Convert the canvas to a data URL
+          const dataURL = canvasElement.toDataURL();
+
+          // Create a temporary link element
+          const link = document.createElement("a");
+          link.href = dataURL;
+          link.download = "annotated_image.png";
+
+          // Trigger the download
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          // Restore original visibility states
+          originalStates.forEach((state) => {
+            state.object.visible = state.visible;
+          });
+
+          // Re-render the canvas
+          canvas.renderAll();
+        }
       },
       retrieveObjects: (includeContent: boolean = false) => {
         const canvas = editor?.canvas;
