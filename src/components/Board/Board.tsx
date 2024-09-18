@@ -235,7 +235,10 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           canvas.renderAll();
         }
       },
-      getAnnotatedImageAsBase64(annotationIds?: string[]) {
+      getAnnotatedImageAsBase64(
+        annotationIds?: string[],
+        scaleFactor: number = 2,
+      ) {
         if (editor?.canvas) {
           const canvas = editor.canvas;
 
@@ -243,21 +246,62 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           const originalStates = canvas.getObjects().map((obj) => ({
             object: obj,
             visible: obj.visible,
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY,
+            left: obj.left,
+            top: obj.top,
           }));
 
-          // Hide all objects except the background image and specified annotations
+          // Store the original background image state
+          const originalBackground = canvas.backgroundImage;
+          const originalBackgroundState = originalBackground && {
+            scaleX: originalBackground.scaleX,
+            scaleY: originalBackground.scaleY,
+            left: originalBackground.left,
+            top: originalBackground.top,
+          };
+
           canvas.getObjects().forEach((obj) => {
-            if (obj.name === "backgroundImage") {
-              obj.visible = true;
-            } else if (
-              annotationIds &&
-              annotationIds.includes(obj.name as string)
-            ) {
+            if (annotationIds && annotationIds.includes(obj.name as string)) {
               obj.visible = true;
             } else {
               obj.visible = false;
             }
           });
+
+          // Temporarily scale the canvas for higher resolution export
+          const originalWidth = canvas.width;
+          const originalHeight = canvas.height;
+
+          // Set canvas dimensions to a larger size based on the scaleFactor
+          canvas.setDimensions(
+            {
+              width: (originalWidth ?? 0) * scaleFactor,
+              height: (originalHeight ?? 0) * scaleFactor,
+            },
+            { backstoreOnly: true },
+          );
+
+          // Scale all objects, including the background image
+          canvas.getObjects().forEach((obj) => {
+            obj.scaleX = (obj.scaleX ?? 1) * scaleFactor;
+            obj.scaleY = (obj.scaleY ?? 1) * scaleFactor;
+            obj.left = (obj.left ?? 0) * scaleFactor;
+            obj.top = (obj.top ?? 0) * scaleFactor;
+            obj.setCoords();
+          });
+
+          // Scale the background image
+          if (canvas.backgroundImage) {
+            canvas.backgroundImage.scaleX =
+              (canvas.backgroundImage.scaleX ?? 1) * scaleFactor;
+            canvas.backgroundImage.scaleY =
+              (canvas.backgroundImage.scaleY ?? 1) * scaleFactor;
+            canvas.backgroundImage.left =
+              (canvas.backgroundImage.left ?? 0) * scaleFactor;
+            canvas.backgroundImage.top =
+              (canvas.backgroundImage.top ?? 0) * scaleFactor;
+          }
 
           // Render the canvas
           canvas.renderAll();
@@ -265,16 +309,39 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           // Get the canvas element
           const canvasElement = canvas.getElement();
 
-          // Convert the canvas to a data URL
-          const dataURL = _.cloneDeep(canvasElement.toDataURL());
+          // Convert the canvas to a high-resolution data URL
+          const dataURL = canvasElement.toDataURL();
 
-          // Restore original visibility states
+          // Restore the original size of the canvas and objects
+          canvas.setDimensions(
+            {
+              width: originalWidth ?? 0,
+              height: originalHeight ?? 0,
+            },
+            { backstoreOnly: true },
+          );
+
+          // Restore original states for all objects
           originalStates.forEach((state) => {
+            state.object.scaleX = state.scaleX;
+            state.object.scaleY = state.scaleY;
+            state.object.left = state.left;
+            state.object.top = state.top;
             state.object.visible = state.visible;
+            state.object.setCoords();
           });
+
+          // Restore the background image state
+          if (originalBackgroundState && canvas.backgroundImage) {
+            canvas.backgroundImage.scaleX = originalBackgroundState.scaleX;
+            canvas.backgroundImage.scaleY = originalBackgroundState.scaleY;
+            canvas.backgroundImage.left = originalBackgroundState.left;
+            canvas.backgroundImage.top = originalBackgroundState.top;
+          }
 
           // Re-render the canvas
           canvas.renderAll();
+
           return dataURL;
         }
       },
