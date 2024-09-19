@@ -44,7 +44,7 @@ export type BoardActions = {
     scaleFactorPercentage?: number,
   ) => void;
   deselectAll: () => void;
-  getAnnotatedImageAsBase64: (ids?: string[]) => void;
+  getAnnotatedImageAsBase64: (ids?: string[]) => Promise<string | undefined>;
   drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: (includeContent?: boolean) => CanvasObject[];
   retrieveObjectContent: (
@@ -339,7 +339,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       },
     }));
     async function cropWhiteBorders(base64Image: string) {
-      return await new Promise((resolve, reject) => {
+      return await new Promise<string>((resolve, reject) => {
         const img = new Image();
         img.onload = function () {
           const canvas = document.createElement("canvas");
