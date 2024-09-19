@@ -44,7 +44,6 @@ export type BoardActions = {
     scaleFactorPercentage?: number,
   ) => void;
   deselectAll: () => void;
-  downloadImage: (ids?: string[]) => void;
   getAnnotatedImageAsBase64: (ids?: string[]) => void;
   drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: (includeContent?: boolean) => CanvasObject[];
@@ -183,64 +182,19 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           resetDrawingObject();
         }
       },
-      downloadImage(annotationIds?: string[]) {
-        if (editor?.canvas) {
-          const canvas = editor.canvas;
-
-          // Store the original object states
-          const originalStates = canvas.getObjects().map((obj) => ({
-            object: obj,
-            visible: obj.visible,
-          }));
-
-          // Hide all objects except the background image and specified annotations
-          canvas.getObjects().forEach((obj) => {
-            if (obj.name === "backgroundImage") {
-              obj.visible = true;
-            } else if (
-              annotationIds &&
-              annotationIds.includes(obj.name as string)
-            ) {
-              obj.visible = true;
-            } else {
-              obj.visible = false;
-            }
-          });
-
-          // Render the canvas
-          canvas.renderAll();
-
-          // Get the canvas element
-          const canvasElement = canvas.getElement();
-
-          // Convert the canvas to a data URL
-          const dataURL = canvasElement.toDataURL();
-
-          // Create a temporary link element
-          const link = document.createElement("a");
-          link.href = dataURL;
-          link.download = "annotated_image.png";
-
-          // Trigger the download
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-          // Restore original visibility states
-          originalStates.forEach((state) => {
-            state.object.visible = state.visible;
-          });
-
-          // Re-render the canvas
-          canvas.renderAll();
-        }
-      },
       async getAnnotatedImageAsBase64(
         annotationIds?: string[],
         scaleFactor: number = 2,
       ) {
         if (editor?.canvas) {
           const canvas = editor.canvas;
+
+          // Save current zoom and position
+          const currentZoom = canvas.getZoom();
+          const currentViewportTransform = canvas.viewportTransform?.slice();
+
+          // Reset zoom
+          this.resetZoom();
 
           // Store the original object states
           const originalStates = canvas.getObjects().map((obj) => ({
@@ -253,7 +207,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           }));
 
           // Store the original background image state
-          const originalBackground = canvas.backgroundImage;
+          const originalBackground = canvas.backgroundImage as fabric.Image;
           const originalBackgroundState = originalBackground && {
             scaleX: originalBackground.scaleX,
             scaleY: originalBackground.scaleY,
@@ -293,14 +247,17 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
           // Scale the background image
           if (canvas.backgroundImage) {
-            canvas.backgroundImage.scaleX =
-              (canvas.backgroundImage.scaleX ?? 1) * scaleFactor;
-            canvas.backgroundImage.scaleY =
-              (canvas.backgroundImage.scaleY ?? 1) * scaleFactor;
-            canvas.backgroundImage.left =
-              (canvas.backgroundImage.left ?? 0) * scaleFactor;
-            canvas.backgroundImage.top =
-              (canvas.backgroundImage.top ?? 0) * scaleFactor;
+            (canvas.backgroundImage as fabric.Image).scaleX =
+              ((canvas.backgroundImage as fabric.Image).scaleX ?? 1) *
+              scaleFactor;
+            (canvas.backgroundImage as fabric.Image).scaleY =
+              ((canvas.backgroundImage as fabric.Image).scaleY ?? 1) *
+              scaleFactor;
+            (canvas.backgroundImage as fabric.Image).left =
+              ((canvas.backgroundImage as fabric.Image).left ?? 0) *
+              scaleFactor;
+            (canvas.backgroundImage as fabric.Image).top =
+              ((canvas.backgroundImage as fabric.Image).top ?? 0) * scaleFactor;
           }
 
           // Render the canvas
@@ -333,11 +290,21 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
           // Restore the background image state
           if (originalBackgroundState && canvas.backgroundImage) {
-            canvas.backgroundImage.scaleX = originalBackgroundState.scaleX;
-            canvas.backgroundImage.scaleY = originalBackgroundState.scaleY;
-            canvas.backgroundImage.left = originalBackgroundState.left;
-            canvas.backgroundImage.top = originalBackgroundState.top;
+            (canvas.backgroundImage as fabric.Image).scaleX =
+              originalBackgroundState.scaleX;
+            (canvas.backgroundImage as fabric.Image).scaleY =
+              originalBackgroundState.scaleY;
+            (canvas.backgroundImage as fabric.Image).left =
+              originalBackgroundState.left;
+            (canvas.backgroundImage as fabric.Image).top =
+              originalBackgroundState.top;
           }
+
+          // Restore zoom and position
+          if (currentViewportTransform) {
+            canvas.setViewportTransform(currentViewportTransform);
+          }
+          canvas.setZoom(currentZoom);
 
           // Re-render the canvas
           canvas.renderAll();
@@ -379,9 +346,14 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           const ctx = canvas.getContext("2d");
           canvas.width = img.width;
           canvas.height = img.height;
-          ctx.drawImage(img, 0, 0);
+          ctx!.drawImage(img, 0, 0);
 
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const imageData = ctx!.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height,
+          );
           const data = imageData.data;
 
           let minX = canvas.width;
@@ -418,7 +390,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           croppedCanvas.height = maxY - minY + 1;
 
           // Draw the cropped image
-          croppedCtx.drawImage(
+          croppedCtx!.drawImage(
             canvas,
             minX,
             minY,
