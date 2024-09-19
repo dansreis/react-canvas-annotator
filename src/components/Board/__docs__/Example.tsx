@@ -48,22 +48,10 @@ const Example: FC<BoardProps> = ({ items, image }) => {
           Draw Rectangle [{isDrawingRectangle ? "ON" : "OFF"}]
         </button>
         <button
-          onClick={() => {
-            const annotations = ref.current?.retrieveObjects();
-            ref.current?.downloadImage(
-              annotations
-                ?.filter((el) => el.id.startsWith("corner"))
-                .map((el) => el.id),
-            );
-          }}
-        >
-          Download Image
-        </button>
-        <button
-          onClick={() => {
+          onClick={async () => {
             const annotations = ref.current?.retrieveObjects();
             console.log(
-              ref.current?.getAnnotatedImageAsBase64(
+              await ref.current?.getAnnotatedImageAsBase64(
                 annotations
                   ?.filter((el) => el.id.startsWith("corner"))
                   .map((el) => el.id),

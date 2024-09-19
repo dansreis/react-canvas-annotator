@@ -44,8 +44,7 @@ export type BoardActions = {
     scaleFactorPercentage?: number,
   ) => void;
   deselectAll: () => void;
-  downloadImage: (ids?: string[]) => void;
-  getAnnotatedImageAsBase64: (ids?: string[]) => void;
+  getAnnotatedImageAsBase64: (ids?: string[]) => Promise<string | undefined>;
   drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: (includeContent?: boolean) => CanvasObject[];
   retrieveObjectContent: (
@@ -183,29 +182,83 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           resetDrawingObject();
         }
       },
-      downloadImage(annotationIds?: string[]) {
+      async getAnnotatedImageAsBase64(
+        annotationIds?: string[],
+        scaleFactor: number = 2,
+      ) {
         if (editor?.canvas) {
           const canvas = editor.canvas;
+
+          // Save current zoom and position
+          const currentZoom = canvas.getZoom();
+          const currentViewportTransform = canvas.viewportTransform?.slice();
+
+          // Reset zoom
+          this.resetZoom();
 
           // Store the original object states
           const originalStates = canvas.getObjects().map((obj) => ({
             object: obj,
             visible: obj.visible,
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY,
+            left: obj.left,
+            top: obj.top,
           }));
 
-          // Hide all objects except the background image and specified annotations
+          // Store the original background image state
+          const originalBackground = canvas.backgroundImage as fabric.Image;
+          const originalBackgroundState = originalBackground && {
+            scaleX: originalBackground.scaleX,
+            scaleY: originalBackground.scaleY,
+            left: originalBackground.left,
+            top: originalBackground.top,
+          };
+
           canvas.getObjects().forEach((obj) => {
-            if (obj.name === "backgroundImage") {
-              obj.visible = true;
-            } else if (
-              annotationIds &&
-              annotationIds.includes(obj.name as string)
-            ) {
+            if (annotationIds && annotationIds.includes(obj.name as string)) {
               obj.visible = true;
             } else {
               obj.visible = false;
             }
           });
+
+          // Temporarily scale the canvas for higher resolution export
+          const originalWidth = canvas.width;
+          const originalHeight = canvas.height;
+
+          // Set canvas dimensions to a larger size based on the scaleFactor
+          canvas.setDimensions(
+            {
+              width: (originalWidth ?? 0) * scaleFactor,
+              height: (originalHeight ?? 0) * scaleFactor,
+            },
+            { backstoreOnly: true },
+          );
+
+          // Scale all objects, including the background image
+          canvas.getObjects().forEach((obj) => {
+            obj.scaleX = (obj.scaleX ?? 1) * scaleFactor;
+            obj.scaleY = (obj.scaleY ?? 1) * scaleFactor;
+            obj.left = (obj.left ?? 0) * scaleFactor;
+            obj.top = (obj.top ?? 0) * scaleFactor;
+            obj.setCoords();
+          });
+
+          // Scale the background image
+          if (canvas.backgroundImage) {
+            (canvas.backgroundImage as fabric.Image).scaleX =
+              ((canvas.backgroundImage as fabric.Image).scaleX ?? 1) *
+              scaleFactor;
+            (canvas.backgroundImage as fabric.Image).scaleY =
+              ((canvas.backgroundImage as fabric.Image).scaleY ?? 1) *
+              scaleFactor;
+            (canvas.backgroundImage as fabric.Image).left =
+              ((canvas.backgroundImage as fabric.Image).left ?? 0) *
+              scaleFactor;
+            (canvas.backgroundImage as fabric.Image).top =
+              ((canvas.backgroundImage as fabric.Image).top ?? 0) * scaleFactor;
+          }
 
           // Render the canvas
           canvas.renderAll();
@@ -213,69 +266,50 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           // Get the canvas element
           const canvasElement = canvas.getElement();
 
-          // Convert the canvas to a data URL
+          // Convert the canvas to a high-resolution data URL
           const dataURL = canvasElement.toDataURL();
 
-          // Create a temporary link element
-          const link = document.createElement("a");
-          link.href = dataURL;
-          link.download = "annotated_image.png";
+          // Restore the original size of the canvas and objects
+          canvas.setDimensions(
+            {
+              width: originalWidth ?? 0,
+              height: originalHeight ?? 0,
+            },
+            { backstoreOnly: true },
+          );
 
-          // Trigger the download
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-          // Restore original visibility states
+          // Restore original states for all objects
           originalStates.forEach((state) => {
+            state.object.scaleX = state.scaleX;
+            state.object.scaleY = state.scaleY;
+            state.object.left = state.left;
+            state.object.top = state.top;
             state.object.visible = state.visible;
+            state.object.setCoords();
           });
+
+          // Restore the background image state
+          if (originalBackgroundState && canvas.backgroundImage) {
+            (canvas.backgroundImage as fabric.Image).scaleX =
+              originalBackgroundState.scaleX;
+            (canvas.backgroundImage as fabric.Image).scaleY =
+              originalBackgroundState.scaleY;
+            (canvas.backgroundImage as fabric.Image).left =
+              originalBackgroundState.left;
+            (canvas.backgroundImage as fabric.Image).top =
+              originalBackgroundState.top;
+          }
+
+          // Restore zoom and position
+          if (currentViewportTransform) {
+            canvas.setViewportTransform(currentViewportTransform);
+          }
+          canvas.setZoom(currentZoom);
 
           // Re-render the canvas
           canvas.renderAll();
-        }
-      },
-      getAnnotatedImageAsBase64(annotationIds?: string[]) {
-        if (editor?.canvas) {
-          const canvas = editor.canvas;
 
-          // Store the original object states
-          const originalStates = canvas.getObjects().map((obj) => ({
-            object: obj,
-            visible: obj.visible,
-          }));
-
-          // Hide all objects except the background image and specified annotations
-          canvas.getObjects().forEach((obj) => {
-            if (obj.name === "backgroundImage") {
-              obj.visible = true;
-            } else if (
-              annotationIds &&
-              annotationIds.includes(obj.name as string)
-            ) {
-              obj.visible = true;
-            } else {
-              obj.visible = false;
-            }
-          });
-
-          // Render the canvas
-          canvas.renderAll();
-
-          // Get the canvas element
-          const canvasElement = canvas.getElement();
-
-          // Convert the canvas to a data URL
-          const dataURL = _.cloneDeep(canvasElement.toDataURL());
-
-          // Restore original visibility states
-          originalStates.forEach((state) => {
-            state.object.visible = state.visible;
-          });
-
-          // Re-render the canvas
-          canvas.renderAll();
-          return dataURL;
+          return await cropWhiteBorders(dataURL);
         }
       },
 
@@ -304,7 +338,78 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         return [];
       },
     }));
+    async function cropWhiteBorders(base64Image: string) {
+      return await new Promise<string>((resolve, reject) => {
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx!.drawImage(img, 0, 0);
 
+          const imageData = ctx!.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height,
+          );
+          const data = imageData.data;
+
+          let minX = canvas.width;
+          let minY = canvas.height;
+          let maxX = 0;
+          let maxY = 0;
+
+          // Find the boundaries of non-white content
+          for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+              const red = data[(y * canvas.width + x) * 4];
+              const green = data[(y * canvas.width + x) * 4 + 1];
+              const blue = data[(y * canvas.width + x) * 4 + 2];
+              const alpha = data[(y * canvas.width + x) * 4 + 3];
+
+              if (
+                red !== 255 ||
+                green !== 255 ||
+                blue !== 255 ||
+                alpha !== 255
+              ) {
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x);
+                maxY = Math.max(maxY, y);
+              }
+            }
+          }
+
+          // Create a new canvas with the cropped dimensions
+          const croppedCanvas = document.createElement("canvas");
+          const croppedCtx = croppedCanvas.getContext("2d");
+          croppedCanvas.width = maxX - minX + 1;
+          croppedCanvas.height = maxY - minY + 1;
+
+          // Draw the cropped image
+          croppedCtx!.drawImage(
+            canvas,
+            minX,
+            minY,
+            croppedCanvas.width,
+            croppedCanvas.height,
+            0,
+            0,
+            croppedCanvas.width,
+            croppedCanvas.height,
+          );
+
+          // Convert back to base64
+          const croppedBase64 = croppedCanvas.toDataURL();
+          resolve(croppedBase64);
+        };
+        img.onerror = reject;
+        img.src = base64Image;
+      });
+    }
     const { editor, onReady } = useFabricJSEditor();
 
     const [savedItems, setSavedItems] = useState<CanvasObject[]>([]);
