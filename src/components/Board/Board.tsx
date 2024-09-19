@@ -235,7 +235,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           canvas.renderAll();
         }
       },
-      getAnnotatedImageAsBase64(
+      async getAnnotatedImageAsBase64(
         annotationIds?: string[],
         scaleFactor: number = 2,
       ) {
@@ -342,7 +342,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           // Re-render the canvas
           canvas.renderAll();
 
-          return dataURL;
+          return await cropWhiteBorders(dataURL);
         }
       },
 
@@ -371,7 +371,73 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         return [];
       },
     }));
+    async function cropWhiteBorders(base64Image: string) {
+      return await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
 
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+
+          let minX = canvas.width;
+          let minY = canvas.height;
+          let maxX = 0;
+          let maxY = 0;
+
+          // Find the boundaries of non-white content
+          for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+              const red = data[(y * canvas.width + x) * 4];
+              const green = data[(y * canvas.width + x) * 4 + 1];
+              const blue = data[(y * canvas.width + x) * 4 + 2];
+              const alpha = data[(y * canvas.width + x) * 4 + 3];
+
+              if (
+                red !== 255 ||
+                green !== 255 ||
+                blue !== 255 ||
+                alpha !== 255
+              ) {
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x);
+                maxY = Math.max(maxY, y);
+              }
+            }
+          }
+
+          // Create a new canvas with the cropped dimensions
+          const croppedCanvas = document.createElement("canvas");
+          const croppedCtx = croppedCanvas.getContext("2d");
+          croppedCanvas.width = maxX - minX + 1;
+          croppedCanvas.height = maxY - minY + 1;
+
+          // Draw the cropped image
+          croppedCtx.drawImage(
+            canvas,
+            minX,
+            minY,
+            croppedCanvas.width,
+            croppedCanvas.height,
+            0,
+            0,
+            croppedCanvas.width,
+            croppedCanvas.height,
+          );
+
+          // Convert back to base64
+          const croppedBase64 = croppedCanvas.toDataURL();
+          resolve(croppedBase64);
+        };
+        img.onerror = reject;
+        img.src = base64Image;
+      });
+    }
     const { editor, onReady } = useFabricJSEditor();
 
     const [savedItems, setSavedItems] = useState<CanvasObject[]>([]);
