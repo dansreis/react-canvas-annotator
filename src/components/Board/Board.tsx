@@ -184,11 +184,12 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       },
       async getAnnotatedImageAsBase64(
         annotationIds?: string[],
-        scaleFactor: number = 2,
+        scale: number = 9043432.413,
       ) {
         if (editor?.canvas) {
           const canvas = editor.canvas;
-
+          const area = (imageSize.width * imageSize.height) / scaleRatio;
+          const scaleFactor = area / scale;
           // Save current zoom and position
           const currentZoom = canvas.getZoom();
           const currentViewportTransform = canvas.viewportTransform?.slice();
