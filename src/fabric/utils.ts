@@ -461,3 +461,80 @@ export const pointerTop = (
     (size / 2) * unitY
   );
 };
+
+export const resizeBase64Image = async (base64Str: string, maxWidth = 800) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = base64Str;
+
+    img.onload = () => {
+      // Calculate the new dimensions
+      const scaleSize = maxWidth / img.width;
+      const newWidth = maxWidth;
+      const newHeight = img.height * scaleSize;
+
+      // Create a canvas and set its dimensions
+      const canvas = document.createElement("canvas");
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+
+      // Draw the resized image on the canvas
+      const ctx = canvas.getContext("2d");
+      ctx?.drawImage(img, 0, 0, newWidth, newHeight);
+
+      // Convert the canvas back to base64 (PNG format)
+      const resizedBase64 = canvas.toDataURL("image/png"); // Output as PNG
+      resolve(resizedBase64);
+    };
+
+    img.onerror = (err) => {
+      reject(err);
+    };
+  });
+};
+
+export function compressBase64Image(base64: string, maxSizeInMB = 1) {
+  return new Promise<string | undefined>((resolve) => {
+    const img = new Image();
+    img.onload = function () {
+      const MAX_SIZE = maxSizeInMB * 1024 * 1024; // Convert MB to bytes
+
+      // Calculate the size of the original base64 image in bytes
+      const base64Length = base64.length - (base64.indexOf(",") + 1);
+      const originalSizeInBytes = Math.ceil((base64Length * 3) / 4);
+
+      // Estimate the compression ratio needed
+      const compressionRatio = Math.sqrt(MAX_SIZE / originalSizeInBytes);
+      // If the image is already under the limit, no need to compress
+      if (compressionRatio >= 1) {
+        return resolve(base64);
+      }
+
+      // Calculate new dimensions
+      const newWidth = img.width * compressionRatio;
+      const newHeight = img.height * compressionRatio;
+
+      // Create a canvas with the new dimensions
+      const canvas = document.createElement("canvas");
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      const ctx = canvas.getContext("2d");
+
+      // Draw the resized image onto the canvas
+      ctx?.drawImage(img, 0, 0, newWidth, newHeight);
+
+      // Adjust the quality parameter based on the compression ratio
+      const quality = compressionRatio < 0.9 ? compressionRatio : 0.9;
+
+      // Convert the canvas to a base64 image
+      const dataURL = canvas.toDataURL("image/jpeg", quality);
+
+      resolve(dataURL);
+    };
+    img.onerror = function (err) {
+      console.error("Image loading error:", err);
+      resolve(undefined);
+    };
+    img.src = base64;
+  });
+}
