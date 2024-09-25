@@ -184,7 +184,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       },
       async getAnnotatedImageAsBase64(
         annotationIds?: string[],
-        maxSizeInKB?: number,
+        maxSizeInMB?: number,
       ) {
         // Create a temporary canvas element
         const tempCanvasElement = document.createElement("canvas");
@@ -287,8 +287,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
         // Optionally, crop white borders if needed
         const croppedDataURL = await cropWhiteBorders(dataURL);
-
-        return croppedDataURL;
+        const resizedBase64 = await fabricUtils.compressBase64Image(
+          croppedDataURL,
+          maxSizeInMB ?? 1,
+        );
+        return resizedBase64;
       },
 
       retrieveObjects: (includeContent: boolean = false) => {
