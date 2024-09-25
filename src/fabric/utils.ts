@@ -523,11 +523,8 @@ export function compressBase64Image(base64: string, maxSizeInMB = 1) {
       // Draw the resized image onto the canvas
       ctx?.drawImage(img, 0, 0, newWidth, newHeight);
 
-      // Adjust the quality parameter based on the compression ratio
-      const quality = compressionRatio < 0.9 ? compressionRatio : 0.9;
-
-      // Convert the canvas to a base64 image
-      const dataURL = canvas.toDataURL("image/jpeg", quality);
+      // Convert the canvas to a base64 PNG image
+      const dataURL = canvas.toDataURL("image/png");
 
       resolve(dataURL);
     };
