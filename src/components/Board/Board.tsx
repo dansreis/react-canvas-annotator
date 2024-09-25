@@ -44,7 +44,10 @@ export type BoardActions = {
     scaleFactorPercentage?: number,
   ) => void;
   deselectAll: () => void;
-  getAnnotatedImageAsBase64: (ids?: string[]) => Promise<string | undefined>;
+  getAnnotatedImageAsBase64: (
+    ids?: string[],
+    maxSizeInMB?: number,
+  ) => Promise<string | undefined>;
   drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: (includeContent?: boolean) => CanvasObject[];
   retrieveObjectContent: (
@@ -216,16 +219,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         });
 
         // Filter items based on annotationIds if provided
-        // const itemsToRender = annotationIds
-        //   ? items.filter((item) =>
-        //       annotationIds.map((el) => el.split("_").at(-1)).includes(item.id),
-        //     )
-        //   : items;
         const itemsToRender = annotationIds
           ? items.filter((item) =>
-              annotationIds.includes(
-                "corner_positiontopLeft_size15_" + item.id,
-              ),
+              annotationIds.map((el) => el.split("_").at(-1)).includes(item.id),
             )
           : items;
 
