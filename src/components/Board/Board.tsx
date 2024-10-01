@@ -654,6 +654,17 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             "_" +
             item.id,
         });
+        group.setControlsVisibility({
+          mt: false, // Middle top control
+          mb: false, // Middle bottom control
+          ml: false, // Middle left control
+          mr: false, // Middle right control
+          bl: false, // Bottom left corner
+          br: false, // Bottom right corner
+          tl: false, // Top left corner
+          tr: false, // Top right corner
+          mtr: false, // Rotation control
+        });
         const positionMap = [
           "topLeft",
           "top",
