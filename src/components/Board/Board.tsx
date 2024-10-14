@@ -767,107 +767,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
 
     const loadItems = useCallback(
       (canvas: Canvas) => {
-        const prevItems = canvas.getObjects();
-        // Find items to remove
-        // debugger;
-        const itemsToRemove = prevItems.filter(
-          (prevItem) =>
-            !items.some((item) => item.id === prevItem?.name) &&
-            !items.some((item) => prevItem?.name?.includes("_" + item.id)),
-        );
+        canvas.getObjects().forEach(function (object) {
+          canvas.remove(object);
+        });
 
-        const itemsToAdd = _.cloneDeep(
-          items.filter(
-            (item) => !prevItems.some((prevItem) => item.id === prevItem?.name),
-          ),
-        );
-
-        // Find items to change (only border colors supported)
         items.forEach((item) => {
-          if (itemsToAdd.includes(item)) {
-            return;
-          }
-
-          const canvasItem = canvas
-            .getObjects()
-            .find((obj) => obj?.name === item.id) as fabric.Object;
-          if (!canvasItem) return;
-          const canvasItemFlagNote = canvas
-            .getObjects()
-            .find((obj) => obj?.name?.includes("_" + item.id)) as fabric.Object;
-          const scaledCoords = item.coords.map((p) =>
-            fabricUtils.toScaledCoord({
-              cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
-              iInfo: { width: imageSize.width, height: imageSize.height },
-              coord: p,
-              scaleRatio,
-            }),
-          );
-          if (scaledCoords.length < 4) return;
-
-          const [p1, p2, p3, p4] = scaledCoords;
-          const width = Math.sqrt(
-            Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
-          );
-          const height = Math.sqrt(
-            Math.pow(p4.x - p1.x, 2) + Math.pow(p4.y - p1.y, 2),
-          );
-          const centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
-          const centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
-          const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
-          const fabricObject = new fabric.Rect({
-            left: centerX,
-            top: centerY,
-            width: width,
-            height: height,
-            fill: item.fillColor,
-            stroke: item.borderColor,
-            strokeWidth: 1,
-            selectable: item.selectable ?? true,
-            hoverCursor: item.hoverCursor,
-            moveCursor: item.moveCursor,
-            name: item.id,
-            angle: angle,
-            originX: "center",
-            originY: "center",
-          });
-
-          if (
-            // numberFlagPosition
-            !canvasItemFlagNote?.name?.includes(
-              "_position" + item.numberFlagPosition,
-            ) ||
-            // numberFlag
-            !canvasItemFlagNote?.name?.endsWith("_" + item.numberFlag) ||
-            // Coords
-            fabricObject.getCoords() !== canvasItem.getCoords() ||
-            // Numberflagsize
-            !canvasItemFlagNote?.name?.includes(
-              "_size" + item.numberFlagSize,
-            ) ||
-            // Bordercolor
-            canvasItem.stroke !== item.borderColor ||
-            // Fillcolor
-            canvasItem.fill !== item.fillColor
-          ) {
-            itemsToRemove.push(canvasItem);
-            if (canvasItemFlagNote) {
-              itemsToRemove.push(canvasItemFlagNote);
-            }
-            itemsToAdd.push(item);
-          }
-        });
-
-        // Remove items
-        itemsToRemove.forEach((item) => {
-          const objCorner = canvas
-            .getObjects()
-            .find((obj) => obj?.name?.endsWith("_" + item.name));
-          canvas.remove(item);
-          objCorner && canvas.remove(objCorner);
-        });
-
-        itemsToAdd.forEach((item) => {
           const scaledCoords = item.coords.map((p) =>
             fabricUtils.toScaledCoord({
               cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
