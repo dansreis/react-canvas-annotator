@@ -1126,7 +1126,6 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         function (this: fabricTypes.CanvasAnnotationState, opt) {
           const evt = opt.e as MouseEvent;
           if (evt.button === 1) {
-            console.log("relesed");
             // Right mouse button
             this.isDragging = false;
             this.selection = true;
