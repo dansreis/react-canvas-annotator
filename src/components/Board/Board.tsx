@@ -53,6 +53,7 @@ export type BoardActions = {
   retrieveObjectContent: (
     id: string,
   ) => { angle: number; content: string | undefined } | null;
+  retrieveLastPointerPosition: () => { x: number; y: number };
 };
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
@@ -74,6 +75,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
   ) => {
     // Set board actions
     React.useImperativeHandle(ref, () => ({
+      retrieveLastPointerPosition() {
+        return lastPointerPosition;
+      },
       resetZoom() {
         editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         setCurrentZoom(100);
@@ -408,6 +412,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     const [imageSize, setImageSize] = useState({
       width: 0,
       height: 0,
+    });
+
+    const [lastPointerPosition, setLastPointerPosition] = useState({
+      x: 0,
+      y: 0,
     });
 
     const [isInDrawingMode, setIsInDrawingMode] = useState(false);
@@ -941,7 +950,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         "mouse:down",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
           const evt = opt.e;
-
+          const pointer = editor.canvas.getPointer(opt.e);
+          setLastPointerPosition(pointer);
           if ((evt.button === 0 && !opt.target) || evt.button === 1) {
             this.isDragging = true;
             this.selection = false;
