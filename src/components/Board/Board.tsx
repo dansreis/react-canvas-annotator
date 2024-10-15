@@ -941,8 +941,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         "mouse:down",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
           const evt = opt.e;
-          if (evt.button === 1) {
-            // Right mouse button
+
+          if ((evt.button === 0 && !opt.target) || evt.button === 1) {
             this.isDragging = true;
             this.selection = false;
             this.lastPosX = evt.clientX;
@@ -1029,8 +1029,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         "mouse:up",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
           const evt = opt.e as MouseEvent;
-          if (evt.button === 1) {
-            // Right mouse button
+          if ([0, 1].includes(evt.button)) {
             this.isDragging = false;
             this.selection = true;
             editor.canvas.zoomToPoint(
