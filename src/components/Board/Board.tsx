@@ -1066,7 +1066,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:move",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
-          const pointer = editor.canvas.getPointer(opt.e);
+          const pointer = editor.canvas.getPointer(opt.e, true);
           setLastPointerPosition(pointer);
           if (this.isDragging) {
             // Right mouse button is pressed
