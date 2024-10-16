@@ -1085,6 +1085,12 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           const relativeX = (pointer.x - imageLeft) / currentScaleRatio;
           const relativeY = (pointer.y - imageTop) / currentScaleRatio;
 
+          console.log(
+            "Pointer relative to image top-left:",
+            relativeX,
+            relativeY,
+          );
+
           // Update the last pointer position with coordinates relative to the image
           setLastPointerPosition({ x: relativeX, y: relativeY });
           if (this.isDragging) {
