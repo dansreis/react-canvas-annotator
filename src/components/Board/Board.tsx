@@ -950,8 +950,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         "mouse:down",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
           const evt = opt.e;
-          const pointer = editor.canvas.getPointer(opt.e);
-          setLastPointerPosition(pointer);
+
           if ((evt.button === 0 && !opt.target) || evt.button === 1) {
             this.isDragging = true;
             this.selection = false;
@@ -1067,6 +1066,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:move",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
+          const pointer = editor.canvas.getPointer(opt.e);
+          setLastPointerPosition(pointer);
           if (this.isDragging) {
             // Right mouse button is pressed
             const e = opt.e;
