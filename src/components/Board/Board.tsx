@@ -951,7 +951,12 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         function (this: fabricTypes.CanvasAnnotationState, opt) {
           const evt = opt.e;
 
-          if ((evt.button === 0 && !opt.target) || evt.button === 1) {
+          if (
+            (evt.button === 0 &&
+              !opt.target &&
+              !this.drawingObject?.isDrawing) ||
+            evt.button === 1
+          ) {
             this.isDragging = true;
             this.selection = false;
             this.lastPosX = evt.clientX;
