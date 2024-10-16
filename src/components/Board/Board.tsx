@@ -1066,10 +1066,44 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:move",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
-          const pointer = editor.canvas.getPointer(opt.e, true);
-          setLastPointerPosition(pointer);
+          const pointer = editor.canvas.getPointer(opt.e, false);
+          const backgroundImage = editor.canvas.backgroundImage as fabric.Image;
+
+          if (backgroundImage) {
+            // Get the image's properties
+            const imageLeft = backgroundImage.left!;
+            const imageTop = backgroundImage.top!;
+            const imageScaleX = backgroundImage.scaleX!;
+            const imageScaleY = backgroundImage.scaleY!;
+            const imageWidth = backgroundImage.width!;
+            const imageHeight = backgroundImage.height!;
+            const imageOriginX = backgroundImage.originX!;
+            const imageOriginY = backgroundImage.originY!;
+
+            // Calculate the top-left corner position of the image
+            let imageTopLeftX = imageLeft;
+            let imageTopLeftY = imageTop;
+
+            if (imageOriginX === "center" || imageOriginX === "middle") {
+              imageTopLeftX = imageLeft - (imageWidth * imageScaleX) / 2;
+            } else if (imageOriginX === "right") {
+              imageTopLeftX = imageLeft - imageWidth * imageScaleX;
+            }
+
+            if (imageOriginY === "center" || imageOriginY === "middle") {
+              imageTopLeftY = imageTop - (imageHeight * imageScaleY) / 2;
+            } else if (imageOriginY === "bottom") {
+              imageTopLeftY = imageTop - imageHeight * imageScaleY;
+            }
+
+            // Calculate pointer position relative to the image's top-left corner
+            const relativeX = (pointer.x - imageTopLeftX) / imageScaleX;
+            const relativeY = (pointer.y - imageTopLeftY) / imageScaleY;
+
+            // Update the last pointer position with coordinates relative to the image
+            setLastPointerPosition({ x: relativeX, y: relativeY });
+          }
           if (this.isDragging) {
-            // Right mouse button is pressed
             const e = opt.e;
             const vpt = editor.canvas.viewportTransform;
             if (vpt) {
