@@ -1067,42 +1067,26 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         "mouse:move",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
           const pointer = editor.canvas.getPointer(opt.e, false);
-          const backgroundImage = editor.canvas.backgroundImage as fabric.Image;
+          const canvasWidth = editor.canvas.getWidth();
+          const canvasHeight = editor.canvas.getHeight();
+          const imageWidth = imageSize.width; // From your state
+          const imageHeight = imageSize.height;
 
-          if (backgroundImage) {
-            // Get the image's properties
-            const imageLeft = backgroundImage.left!;
-            const imageTop = backgroundImage.top!;
-            const imageScaleX = backgroundImage.scaleX!;
-            const imageScaleY = backgroundImage.scaleY!;
-            const imageWidth = backgroundImage.width!;
-            const imageHeight = backgroundImage.height!;
-            const imageOriginX = backgroundImage.originX!;
-            const imageOriginY = backgroundImage.originY!;
+          // Get the scale ratio
+          const currentScaleRatio = scaleRatio; // From your state
 
-            // Calculate the top-left corner position of the image
-            let imageTopLeftX = imageLeft;
-            let imageTopLeftY = imageTop;
+          // Compute the image's top-left corner position in canvas coordinates
+          const imageLeft =
+            canvasWidth / 2 - (imageWidth * currentScaleRatio) / 2;
+          const imageTop =
+            canvasHeight / 2 - (imageHeight * currentScaleRatio) / 2;
 
-            if (imageOriginX === "center" || imageOriginX === "middle") {
-              imageTopLeftX = imageLeft - (imageWidth * imageScaleX) / 2;
-            } else if (imageOriginX === "right") {
-              imageTopLeftX = imageLeft - imageWidth * imageScaleX;
-            }
+          // Calculate pointer position relative to the image's top-left corner
+          const relativeX = (pointer.x - imageLeft) / currentScaleRatio;
+          const relativeY = (pointer.y - imageTop) / currentScaleRatio;
 
-            if (imageOriginY === "center" || imageOriginY === "middle") {
-              imageTopLeftY = imageTop - (imageHeight * imageScaleY) / 2;
-            } else if (imageOriginY === "bottom") {
-              imageTopLeftY = imageTop - imageHeight * imageScaleY;
-            }
-
-            // Calculate pointer position relative to the image's top-left corner
-            const relativeX = (pointer.x - imageTopLeftX) / imageScaleX;
-            const relativeY = (pointer.y - imageTopLeftY) / imageScaleY;
-
-            // Update the last pointer position with coordinates relative to the image
-            setLastPointerPosition({ x: relativeX, y: relativeY });
-          }
+          // Update the last pointer position with coordinates relative to the image
+          setLastPointerPosition({ x: relativeX, y: relativeY });
           if (this.isDragging) {
             const e = opt.e;
             const vpt = editor.canvas.viewportTransform;
