@@ -1260,6 +1260,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       loadItems,
       scaleRatio,
       isInDrawingMode,
+      imageSize.width,
+      imageSize.height,
     ]);
 
     // Update zoom parent value
