@@ -83,21 +83,7 @@ export const toScaledCoord = ({
  */
 export const pointsInCanvas = (obj?: fabricTypes.CustomObject) => {
   if (!obj) return [];
-  if (!obj.points) {
-    return obj.getCoords(true);
-  }
-  return (
-    obj.points?.map((p) => {
-      const matrix = obj.calcOwnMatrix();
-      const minX = Math.min(...obj.points!.map((_p) => _p.x));
-      const minY = Math.min(...obj.points!.map((_p) => _p.y));
-      const tmpPoint = new fabric.Point(
-        p.x - minX - obj.width! / 2,
-        p.y - minY - obj.height! / 2,
-      );
-      return fabric.util.transformPoint(tmpPoint, matrix);
-    }) ?? []
-  );
+  return obj.getCoords(true);
 };
 
 /**
