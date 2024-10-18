@@ -448,29 +448,106 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       obj: fabricTypes.CustomObject,
       includeContent = true,
     ) => {
-      const width = editor?.canvas.getWidth() ?? 0;
-      const height = editor?.canvas.getHeight() ?? 0;
+      const width1 = editor?.canvas.getWidth() ?? 0;
+      const height1 = editor?.canvas.getHeight() ?? 0;
       const updatedCoordPoints = fabricUtils.pointsInCanvas(obj);
       const updatedCoords = updatedCoordPoints.map((p) =>
         fabricUtils.toOriginalCoord({
           cInfo: {
-            width,
-            height,
+            width: width1,
+            height: height1,
           },
           iInfo: imageSize,
           coord: p,
           scaleRatio,
         }),
       );
+      // Assume updatedCoords is an array of points [{ x: Number, y: Number }, ...]
+      const p0 = updatedCoords[0];
+      const p1 = updatedCoords[1];
+      const p2 = updatedCoords[2];
+
+      // Calculate the angle between the first two points
+      const angle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+
+      // Function to calculate the distance between two points
+      function distance(
+        pA: {
+          x: number;
+          y: number;
+        },
+        pB: {
+          x: number;
+          y: number;
+        },
+      ) {
+        return Math.hypot(pB.x - pA.x, pB.y - pA.y);
+      }
+
+      // Calculate the width and height of the rotated area
+      const width = distance(p0, p1);
+      const height = distance(p1, p2);
+
+      // Calculate the center point of the polygon
+      const centerX = (p0.x + p2.x) / 2;
+      const centerY = (p0.y + p2.y) / 2;
+
+      // Create an off-screen canvas with the dimensions of the rotated area
+      const offscreenCanvas = document.createElement("canvas");
+      offscreenCanvas.width = width;
+      offscreenCanvas.height = height;
+
+      const ctx = offscreenCanvas.getContext("2d");
+
+      // Function to transform points according to the canvas transformations
+      function transformPoint(p: { x: number; y: number }) {
+        // Translate points to the origin (center of the polygon)
+        const x = p.x - centerX;
+        const y = p.y - centerY;
+
+        // Rotate points by the negative angle to align them vertically
+        const sin = Math.sin(-angle);
+        const cos = Math.cos(-angle);
+
+        const xRotated = x * cos - y * sin;
+        const yRotated = x * sin + y * cos;
+
+        // Translate points to the canvas coordinate system
+        const xTransformed = xRotated + width / 2;
+        const yTransformed = yRotated + height / 2;
+
+        return { x: xTransformed, y: yTransformed };
+      }
+
+      // Transform the updatedCoords to match the canvas coordinate system
+      const transformedCoords = updatedCoords.map(transformPoint);
+
+      // Define the clipping path using the transformed coordinates
+      ctx!.beginPath();
+      transformedCoords.forEach((point, index) => {
+        if (index === 0) {
+          ctx!.moveTo(point.x, point.y);
+        } else {
+          ctx!.lineTo(point.x, point.y);
+        }
+      });
+      ctx!.closePath();
+      ctx!.clip();
+
+      // Apply transformations to the context to align the image correctly
+      ctx!.translate(width / 2, height / 2);
+      ctx!.rotate(-angle);
+      ctx!.translate(-centerX, -centerY);
+
+      // Draw the original image onto the transformed context
+      ctx!.drawImage(originalFabricImage!.getElement(), 0, 0);
+
+      // Export the rotated and cropped image
+      const dataURL = offscreenCanvas.toDataURL();
 
       return {
         coords: updatedCoords,
-        content: includeContent
-          ? originalFabricImage?.toDataURL({
-              withoutTransform: true,
-              ...fabricUtils.getBoundingBox(updatedCoords),
-            })
-          : undefined,
+        content: includeContent ? dataURL : undefined,
       };
     };
 
