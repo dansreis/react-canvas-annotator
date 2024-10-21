@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { fabric } from "fabric";
 import { v4 as uuidv4 } from "uuid";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
@@ -76,7 +76,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
     // Set board actions
     React.useImperativeHandle(ref, () => ({
       retrieveLastPointerPosition() {
-        return lastPointerPosition;
+        return lastPointerPosition.current;
       },
       resetZoom() {
         editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
@@ -414,7 +414,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       height: 0,
     });
 
-    const [lastPointerPosition, setLastPointerPosition] = useState({
+    const lastPointerPosition = useRef({
       x: 0,
       y: 0,
     });
@@ -1168,7 +1168,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           const relativeY = (pointer.y - imageTop) / currentScaleRatio;
 
           // Update the last pointer position with coordinates relative to the image
-          setLastPointerPosition({ x: relativeX, y: relativeY });
+          lastPointerPosition.current = { x: relativeX, y: relativeY };
           if (this.isDragging) {
             const e = opt.e;
             const vpt = editor.canvas.viewportTransform;
