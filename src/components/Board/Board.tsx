@@ -214,6 +214,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
                   scaleY: 1,
                   originX: "left",
                   originY: "top",
+                  stroke: "black",
+                  strokeWidth: 1,
                 },
               );
               resolve();
@@ -995,6 +997,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             top: (canvas.height ?? 1) / 2,
             originX: "middle",
             originY: "middle",
+            stroke: "black",
+            strokeWidth: 1,
           });
           canvas!.renderAll();
           onLoadedImage?.({ width: img.width ?? 0, height: img.height ?? 0 });
