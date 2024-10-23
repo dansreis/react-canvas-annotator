@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { fabric } from "fabric";
 import { v4 as uuidv4 } from "uuid";
 import { FabricJSCanvas, useFabricJSEditor } from "fabricjs-react";
@@ -44,12 +44,16 @@ export type BoardActions = {
     scaleFactorPercentage?: number,
   ) => void;
   deselectAll: () => void;
-  getAnnotatedImageAsBase64: (ids?: string[]) => Promise<string | undefined>;
+  getAnnotatedImageAsBase64: (
+    ids?: string[],
+    maxSizeInMB?: number,
+  ) => Promise<string | undefined>;
   drawObject: (type?: "rectangle" | "polygon") => void;
   retrieveObjects: (includeContent?: boolean) => CanvasObject[];
   retrieveObjectContent: (
     id: string,
   ) => { angle: number; content: string | undefined } | null;
+  retrieveLastPointerPosition: () => { x: number; y: number };
 };
 
 const Board = React.forwardRef<BoardActions, BoardProps>(
@@ -71,6 +75,9 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
   ) => {
     // Set board actions
     React.useImperativeHandle(ref, () => ({
+      retrieveLastPointerPosition() {
+        return lastPointerPosition.current;
+      },
       resetZoom() {
         editor?.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         setCurrentZoom(100);
@@ -83,7 +90,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             ? {
                 angle: obj.angle ?? 0,
                 content: getObjectInfo(obj as fabricTypes.CustomObject).content,
-              } ?? null
+              }
             : null;
         }
         return null;
@@ -184,134 +191,109 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       },
       async getAnnotatedImageAsBase64(
         annotationIds?: string[],
-        scale: number = 9043432.413,
+        maxSizeInMB?: number,
       ) {
-        if (editor?.canvas) {
-          const canvas = editor.canvas;
-          const area = (imageSize.width * imageSize.height) / scaleRatio;
-          const scaleFactor = area / scale;
-          // Save current zoom and position
-          const currentZoom = canvas.getZoom();
-          const currentViewportTransform = canvas.viewportTransform?.slice();
+        // Create a temporary canvas element
+        const tempCanvasElement = document.createElement("canvas");
+        tempCanvasElement.width = imageSize.width;
+        tempCanvasElement.height = imageSize.height;
 
-          // Reset zoom
-          this.resetZoom();
+        // Create a Fabric.js canvas instance
+        const tempCanvas = new fabric.Canvas(tempCanvasElement);
 
-          // Store the original object states
-          const originalStates = canvas.getObjects().map((obj) => ({
-            object: obj,
-            visible: obj.visible,
-            scaleX: obj.scaleX,
-            scaleY: obj.scaleY,
-            left: obj.left,
-            top: obj.top,
-          }));
-
-          // Store the original background image state
-          const originalBackground = canvas.backgroundImage as fabric.Image;
-          const originalBackgroundState = originalBackground && {
-            scaleX: originalBackground.scaleX,
-            scaleY: originalBackground.scaleY,
-            left: originalBackground.left,
-            top: originalBackground.top,
-          };
-
-          canvas.getObjects().forEach((obj) => {
-            if (annotationIds && annotationIds.includes(obj.name as string)) {
-              obj.visible = true;
-            } else {
-              obj.visible = false;
-            }
-          });
-
-          // Temporarily scale the canvas for higher resolution export
-          const originalWidth = canvas.width;
-          const originalHeight = canvas.height;
-
-          // Set canvas dimensions to a larger size based on the scaleFactor
-          canvas.setDimensions(
-            {
-              width: (originalWidth ?? 0) * scaleFactor,
-              height: (originalHeight ?? 0) * scaleFactor,
+        // Load the background image into the temporary canvas
+        await new Promise<void>((resolve) => {
+          fabric.Image.fromURL(
+            image.src,
+            (img) => {
+              tempCanvas.setBackgroundImage(
+                img,
+                tempCanvas.renderAll.bind(tempCanvas),
+                {
+                  scaleX: 1,
+                  scaleY: 1,
+                  originX: "left",
+                  originY: "top",
+                  stroke: "black",
+                  strokeWidth: 1,
+                },
+              );
+              resolve();
             },
-            { backstoreOnly: true },
+            { crossOrigin: "anonymous" },
           );
+        });
 
-          // Scale all objects, including the background image
-          canvas.getObjects().forEach((obj) => {
-            obj.scaleX = (obj.scaleX ?? 1) * scaleFactor;
-            obj.scaleY = (obj.scaleY ?? 1) * scaleFactor;
-            obj.left = (obj.left ?? 0) * scaleFactor;
-            obj.top = (obj.top ?? 0) * scaleFactor;
-            obj.setCoords();
-          });
+        // Filter items based on annotationIds if provided
+        const itemsToRender = annotationIds
+          ? items.filter((item) =>
+              annotationIds.map((el) => el.split("_").at(-1)).includes(item.id),
+            )
+          : items;
 
-          // Scale the background image
-          if (canvas.backgroundImage) {
-            (canvas.backgroundImage as fabric.Image).scaleX =
-              ((canvas.backgroundImage as fabric.Image).scaleX ?? 1) *
-              scaleFactor;
-            (canvas.backgroundImage as fabric.Image).scaleY =
-              ((canvas.backgroundImage as fabric.Image).scaleY ?? 1) *
-              scaleFactor;
-            (canvas.backgroundImage as fabric.Image).left =
-              ((canvas.backgroundImage as fabric.Image).left ?? 0) *
-              scaleFactor;
-            (canvas.backgroundImage as fabric.Image).top =
-              ((canvas.backgroundImage as fabric.Image).top ?? 0) * scaleFactor;
+        // Add annotations to the temporary canvas
+        itemsToRender.forEach((item) => {
+          let fabricObject: fabric.Object;
+
+          if (item.coords.length === 4) {
+            // Create a rectangle
+            const [p1, p2, p3, p4] = item.coords;
+            const width = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+            const height = Math.hypot(p4.x - p1.x, p4.y - p1.y);
+            const centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
+            const centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
+            const angle =
+              (Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180) / Math.PI;
+
+            fabricObject = new fabric.Rect({
+              left: centerX,
+              top: centerY,
+              width: width,
+              height: height,
+              fill: item.fillColor,
+              stroke: item.borderColor,
+              strokeWidth: 1,
+              selectable: false,
+              angle: angle,
+              originX: "center",
+              originY: "center",
+            });
+          } else {
+            // Create a polygon
+            fabricObject = new fabric.Polygon(item.coords, {
+              fill: item.fillColor,
+              stroke: item.borderColor,
+              strokeWidth: 1,
+              selectable: false,
+            });
           }
 
-          // Render the canvas
-          canvas.renderAll();
-
-          // Get the canvas element
-          const canvasElement = canvas.getElement();
-
-          // Convert the canvas to a high-resolution data URL
-          const dataURL = canvasElement.toDataURL();
-
-          // Restore the original size of the canvas and objects
-          canvas.setDimensions(
-            {
-              width: originalWidth ?? 0,
-              height: originalHeight ?? 0,
-            },
-            { backstoreOnly: true },
-          );
-
-          // Restore original states for all objects
-          originalStates.forEach((state) => {
-            state.object.scaleX = state.scaleX;
-            state.object.scaleY = state.scaleY;
-            state.object.left = state.left;
-            state.object.top = state.top;
-            state.object.visible = state.visible;
-            state.object.setCoords();
-          });
-
-          // Restore the background image state
-          if (originalBackgroundState && canvas.backgroundImage) {
-            (canvas.backgroundImage as fabric.Image).scaleX =
-              originalBackgroundState.scaleX;
-            (canvas.backgroundImage as fabric.Image).scaleY =
-              originalBackgroundState.scaleY;
-            (canvas.backgroundImage as fabric.Image).left =
-              originalBackgroundState.left;
-            (canvas.backgroundImage as fabric.Image).top =
-              originalBackgroundState.top;
+          // Add corner object if it exists
+          if (item.numberFlag !== null && item.numberFlag !== undefined) {
+            const cornerGroup = createCornerGroup(
+              item,
+              fabricObject,
+              item.coords,
+              "green",
+              true,
+            );
+            tempCanvas.add(cornerGroup);
           }
+        });
 
-          // Restore zoom and position
-          if (currentViewportTransform) {
-            canvas.setViewportTransform(currentViewportTransform);
-          }
-          canvas.setZoom(currentZoom);
+        // Render the canvas
+        tempCanvas.renderAll();
 
-          // Re-render the canvas
-          canvas.renderAll();
+        // Export the canvas as a Base64 PNG image
+        const dataURL = tempCanvasElement.toDataURL("image/png");
 
-          return await cropWhiteBorders(dataURL);
-        }
+        // Optionally, crop white borders if needed
+        const croppedDataURL = await cropWhiteBorders(dataURL);
+        const resizedBase64 = await fabricUtils.compressBase64Image(
+          croppedDataURL,
+          maxSizeInMB ?? 1,
+        );
+        return resizedBase64;
       },
 
       retrieveObjects: (includeContent: boolean = false) => {
@@ -434,6 +416,11 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       height: 0,
     });
 
+    const lastPointerPosition = useRef({
+      x: 0,
+      y: 0,
+    });
+
     const [isInDrawingMode, setIsInDrawingMode] = useState(false);
 
     const [objectHelper, setObjectHelper] = useState<{
@@ -463,29 +450,106 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       obj: fabricTypes.CustomObject,
       includeContent = true,
     ) => {
-      const width = editor?.canvas.getWidth() ?? 0;
-      const height = editor?.canvas.getHeight() ?? 0;
+      const width1 = editor?.canvas.getWidth() ?? 0;
+      const height1 = editor?.canvas.getHeight() ?? 0;
       const updatedCoordPoints = fabricUtils.pointsInCanvas(obj);
       const updatedCoords = updatedCoordPoints.map((p) =>
         fabricUtils.toOriginalCoord({
           cInfo: {
-            width,
-            height,
+            width: width1,
+            height: height1,
           },
           iInfo: imageSize,
           coord: p,
           scaleRatio,
         }),
       );
+      // Assume updatedCoords is an array of points [{ x: Number, y: Number }, ...]
+      const p0 = updatedCoords[0];
+      const p1 = updatedCoords[1];
+      const p2 = updatedCoords[2];
+
+      // Calculate the angle between the first two points
+      const angle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+
+      // Function to calculate the distance between two points
+      function distance(
+        pA: {
+          x: number;
+          y: number;
+        },
+        pB: {
+          x: number;
+          y: number;
+        },
+      ) {
+        return Math.hypot(pB.x - pA.x, pB.y - pA.y);
+      }
+
+      // Calculate the width and height of the rotated area
+      const width = distance(p0, p1);
+      const height = distance(p1, p2);
+
+      // Calculate the center point of the polygon
+      const centerX = (p0.x + p2.x) / 2;
+      const centerY = (p0.y + p2.y) / 2;
+
+      // Create an off-screen canvas with the dimensions of the rotated area
+      const offscreenCanvas = document.createElement("canvas");
+      offscreenCanvas.width = width;
+      offscreenCanvas.height = height;
+
+      const ctx = offscreenCanvas.getContext("2d");
+
+      // Function to transform points according to the canvas transformations
+      function transformPoint(p: { x: number; y: number }) {
+        // Translate points to the origin (center of the polygon)
+        const x = p.x - centerX;
+        const y = p.y - centerY;
+
+        // Rotate points by the negative angle to align them vertically
+        const sin = Math.sin(-angle);
+        const cos = Math.cos(-angle);
+
+        const xRotated = x * cos - y * sin;
+        const yRotated = x * sin + y * cos;
+
+        // Translate points to the canvas coordinate system
+        const xTransformed = xRotated + width / 2;
+        const yTransformed = yRotated + height / 2;
+
+        return { x: xTransformed, y: yTransformed };
+      }
+
+      // Transform the updatedCoords to match the canvas coordinate system
+      const transformedCoords = updatedCoords.map(transformPoint);
+
+      // Define the clipping path using the transformed coordinates
+      ctx!.beginPath();
+      transformedCoords.forEach((point, index) => {
+        if (index === 0) {
+          ctx!.moveTo(point.x, point.y);
+        } else {
+          ctx!.lineTo(point.x, point.y);
+        }
+      });
+      ctx!.closePath();
+      ctx!.clip();
+
+      // Apply transformations to the context to align the image correctly
+      ctx!.translate(width / 2, height / 2);
+      ctx!.rotate(-angle);
+      ctx!.translate(-centerX, -centerY);
+
+      // Draw the original image onto the transformed context
+      ctx!.drawImage(originalFabricImage!.getElement(), 0, 0);
+
+      // Export the rotated and cropped image
+      const dataURL = offscreenCanvas.toDataURL();
 
       return {
         coords: updatedCoords,
-        content: includeContent
-          ? originalFabricImage?.toDataURL({
-              withoutTransform: true,
-              ...fabricUtils.getBoundingBox(updatedCoords),
-            })
-          : undefined,
+        content: includeContent ? dataURL : undefined,
       };
     };
 
@@ -577,7 +641,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       return angle;
     }
 
-    const addCornerObjectToPolygon = useCallback(
+    const createCornerGroup = useCallback(
       (
         item: CanvasObject,
         polygon: fabric.Object,
@@ -587,13 +651,14 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         }[],
 
         color?: string,
+        forExport?: boolean,
       ) => {
         const index = item.numberFlag ?? 0;
         const position = item.numberFlagPosition;
 
-        if (!editor?.canvas) return;
         if (!color) color = "green";
-        const _size = item.numberFlagSize ?? 0;
+        let _size = item.numberFlagSize ?? 0;
+        _size = _size * 3 * (!forExport ? scaleRatio ?? 100 : 1);
         const polygonCoords = findPositionCoords(
           scaledCoords,
           position ?? "bottomRight",
@@ -628,7 +693,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           radius: _size / 2,
           fill: "white",
           stroke: color,
-          strokeWidth: 0.8,
+          strokeWidth: _size * 0.05,
           originX: "center",
           originY: "center",
           left: leftCircleAndTextCoord,
@@ -650,7 +715,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           height: _size / 3,
           fill: color,
           stroke: color,
-          strokeWidth: 1,
+          strokeWidth: _size * 0.15,
           originX: "center",
           originY: "center",
           left: fabricUtils.pointerLeft(
@@ -676,6 +741,17 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             item.numberFlagSize +
             "_" +
             item.id,
+        });
+        group.setControlsVisibility({
+          mt: false, // Middle top control
+          mb: false, // Middle bottom control
+          ml: false, // Middle left control
+          mr: false, // Middle right control
+          bl: false, // Bottom left corner
+          br: false, // Bottom right corner
+          tl: false, // Top left corner
+          tr: false, // Top right corner
+          mtr: false, // Rotation control
         });
         const positionMap = [
           "topLeft",
@@ -749,115 +825,41 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
           );
           onMovingNumberFlag?.(item, newPosition.position);
         });
-
-        editor.canvas.add(group);
+        return group;
       },
-      [editor?.canvas, onMovingNumberFlag],
+      [onMovingNumberFlag, scaleRatio],
+    );
+
+    const addCornerObjectToPolygon = useCallback(
+      (
+        item: CanvasObject,
+        polygon: fabric.Object,
+        scaledCoords: {
+          x: number;
+          y: number;
+        }[],
+
+        color?: string,
+      ) => {
+        const group = createCornerGroup(
+          item,
+          polygon,
+          scaledCoords,
+          color,
+          false,
+        );
+        editor?.canvas.add(group!);
+      },
+      [createCornerGroup, editor?.canvas],
     );
 
     const loadItems = useCallback(
       (canvas: Canvas) => {
-        const prevItems = canvas.getObjects();
-        // Find items to remove
-        // debugger;
-        const itemsToRemove = prevItems.filter(
-          (prevItem) =>
-            !items.some((item) => item.id === prevItem?.name) &&
-            !items.some((item) => prevItem?.name?.includes("_" + item.id)),
-        );
+        canvas.getObjects().forEach(function (object) {
+          canvas.remove(object);
+        });
 
-        const itemsToAdd = _.cloneDeep(
-          items.filter(
-            (item) => !prevItems.some((prevItem) => item.id === prevItem?.name),
-          ),
-        );
-
-        // Find items to change (only border colors supported)
         items.forEach((item) => {
-          if (itemsToAdd.includes(item)) {
-            return;
-          }
-
-          const canvasItem = canvas
-            .getObjects()
-            .find((obj) => obj?.name === item.id) as fabric.Object;
-          if (!canvasItem) return;
-          const canvasItemFlagNote = canvas
-            .getObjects()
-            .find((obj) => obj?.name?.includes("_" + item.id)) as fabric.Object;
-          const scaledCoords = item.coords.map((p) =>
-            fabricUtils.toScaledCoord({
-              cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
-              iInfo: { width: imageSize.width, height: imageSize.height },
-              coord: p,
-              scaleRatio,
-            }),
-          );
-          if (scaledCoords.length < 4) return;
-
-          const [p1, p2, p3, p4] = scaledCoords;
-          const width = Math.sqrt(
-            Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
-          );
-          const height = Math.sqrt(
-            Math.pow(p4.x - p1.x, 2) + Math.pow(p4.y - p1.y, 2),
-          );
-          const centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
-          const centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
-          const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
-          const fabricObject = new fabric.Rect({
-            left: centerX,
-            top: centerY,
-            width: width,
-            height: height,
-            fill: item.fillColor,
-            stroke: item.borderColor,
-            strokeWidth: 1,
-            selectable: item.selectable ?? true,
-            hoverCursor: item.hoverCursor,
-            moveCursor: item.moveCursor,
-            name: item.id,
-            angle: angle,
-            originX: "center",
-            originY: "center",
-          });
-
-          if (
-            // numberFlagPosition
-            !canvasItemFlagNote?.name?.includes(
-              "_position" + item.numberFlagPosition,
-            ) ||
-            // numberFlag
-            !canvasItemFlagNote?.name?.endsWith("_" + item.numberFlag) ||
-            // Coords
-            fabricObject.getCoords() !== canvasItem.getCoords() ||
-            // Numberflagsize
-            !canvasItemFlagNote?.name?.includes(
-              "_size" + item.numberFlagSize,
-            ) ||
-            // Bordercolor
-            canvasItem.stroke !== item.borderColor ||
-            // Fillcolor
-            canvasItem.fill !== item.fillColor
-          ) {
-            itemsToRemove.push(canvasItem);
-            if (canvasItemFlagNote) {
-              itemsToRemove.push(canvasItemFlagNote);
-            }
-            itemsToAdd.push(item);
-          }
-        });
-
-        // Remove items
-        itemsToRemove.forEach((item) => {
-          const objCorner = canvas
-            .getObjects()
-            .find((obj) => obj?.name?.endsWith("_" + item.name));
-          canvas.remove(item);
-          objCorner && canvas.remove(objCorner);
-        });
-
-        itemsToAdd.forEach((item) => {
           const scaledCoords = item.coords.map((p) =>
             fabricUtils.toScaledCoord({
               cInfo: { width: canvas.getWidth(), height: canvas.getHeight() },
@@ -888,7 +890,7 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               height: height,
               fill: item.fillColor,
               stroke: item.borderColor,
-              strokeWidth: 1,
+              strokeWidth: 0.4,
               selectable: item.selectable ?? true,
               hoverCursor: item.hoverCursor,
               moveCursor: item.moveCursor,
@@ -973,6 +975,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       // Disable uniform scaling
       editor.canvas.uniformScaling = false;
 
+      editor.canvas.fireMiddleClick = true;
+
       fabric.Image.fromURL(
         image.src,
         (img) => {
@@ -993,6 +997,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
             top: (canvas.height ?? 1) / 2,
             originX: "middle",
             originY: "middle",
+            stroke: "black",
+            strokeWidth: 1,
           });
           canvas!.renderAll();
           onLoadedImage?.({ width: img.width ?? 0, height: img.height ?? 0 });
@@ -1025,78 +1031,87 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
         "mouse:down",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
           const evt = opt.e;
-          this.isDragging = opt.target === null; // Enable dragging when the cursor is on canvas (no object selected)
-          this.selection = false;
-          this.lastPosX = evt.clientX;
-          this.lastPosY = evt.clientY;
-          this.drawingObject = drawingObject;
+          if (
+            (evt.button === 0 && !opt.target && !drawingObject.isDrawing) ||
+            evt.button === 1
+          ) {
+            this.isDragging = true;
+            this.selection = false;
+            this.lastPosX = evt.clientX;
+            this.lastPosY = evt.clientY;
+            evt.preventDefault();
+          } else {
+            this.drawingObject = drawingObject;
 
-          // Extract coords for polygon drawing
-          const pointer = editor?.canvas.getPointer(opt.e);
-          const lastClickCoords = { x: pointer.x, y: pointer.y };
-          this.lastClickCoords = lastClickCoords;
+            // Extract coords for polygon drawing
+            const pointer = editor?.canvas.getPointer(opt.e);
+            const lastClickCoords = { x: pointer.x, y: pointer.y };
+            this.lastClickCoords = lastClickCoords;
 
-          if (drawingObject.isDrawing && drawingObject.type === "polygon") {
-            // Retrive the existing polygon
+            if (drawingObject.isDrawing && drawingObject.type === "polygon") {
+              // Retrive the existing polygon
 
-            const polygon =
-              fabricUtils.findObjectByName<fabricTypes.CustomObject>(
-                editor.canvas,
-                drawingObject.id,
+              const polygon =
+                fabricUtils.findObjectByName<fabricTypes.CustomObject>(
+                  editor.canvas,
+                  drawingObject.id,
+                );
+              // Delete previously created polygon (if exists)
+              if (polygon) editor.canvas.remove(polygon);
+
+              const hasClickedOnInitialPoint = (
+                p?: fabricTypes.CustomObject,
+              ) => {
+                if (p === undefined) return false;
+                // const collisionPoint: string | undefined = undefined;
+                const initialPoint = p.oCoords["p0"];
+
+                if (initialPoint) {
+                  const { tl, tr, bl, br } = initialPoint.corner;
+                  // We need to ignore the zoom in order to obtain the accurate coordinates
+                  const zoomedPointer = editor?.canvas.getPointer(opt.e, true);
+                  return fabricUtils.isCoordInsideCoords(zoomedPointer, {
+                    tl,
+                    tr,
+                    bl,
+                    br,
+                  });
+                }
+                return false;
+              };
+
+              const isInitialPoint = hasClickedOnInitialPoint(polygon);
+
+              // Update drawing points of polygon
+              const newPoints = isInitialPoint
+                ? drawingObject.points
+                : drawingObject.points.concat(lastClickCoords);
+
+              // Draw a new polygon from scratch
+              const newPolygon = fabricUtils.createControllableCustomObject(
+                isInitialPoint ? fabric.Polygon : fabric.Polyline,
+                newPoints,
+                { name: drawingObject.id },
               );
-            // Delete previously created polygon (if exists)
-            if (polygon) editor.canvas.remove(polygon);
 
-            const hasClickedOnInitialPoint = (p?: fabricTypes.CustomObject) => {
-              if (p === undefined) return false;
-              // const collisionPoint: string | undefined = undefined;
-              const initialPoint = p.oCoords["p0"];
-
-              if (initialPoint) {
-                const { tl, tr, bl, br } = initialPoint.corner;
-                // We need to ignore the zoom in order to obtain the accurate coordinates
-                const zoomedPointer = editor?.canvas.getPointer(opt.e, true);
-                return fabricUtils.isCoordInsideCoords(zoomedPointer, {
-                  tl,
-                  tr,
-                  bl,
-                  br,
+              if (isInitialPoint) {
+                resetDrawingObject();
+              } else {
+                setDrawingObject({
+                  ...drawingObject,
+                  points: newPoints,
                 });
               }
-              return false;
-            };
 
-            const isInitialPoint = hasClickedOnInitialPoint(polygon);
-
-            // Update drawing points of polygon
-            const newPoints = isInitialPoint
-              ? drawingObject.points
-              : drawingObject.points.concat(lastClickCoords);
-
-            // Draw a new polygon from scratch
-            const newPolygon = fabricUtils.createControllableCustomObject(
-              isInitialPoint ? fabric.Polygon : fabric.Polyline,
-              newPoints,
-              { name: drawingObject.id },
-            );
-
-            if (isInitialPoint) {
-              resetDrawingObject();
-            } else {
-              setDrawingObject({
-                ...drawingObject,
-                points: newPoints,
-              });
+              // Add object to canvas and set it as ACTIVE
+              editor.canvas.add(newPolygon);
+              editor.canvas.setActiveObject(newPolygon);
+            } else if (
+              this.drawingObject?.isDrawing &&
+              this.drawingObject.type === "rectangle"
+            ) {
+              console.log("Draw Rectangle - BEGIN");
             }
-
-            // Add object to canvas and set it as ACTIVE
-            editor.canvas.add(newPolygon);
-            editor.canvas.setActiveObject(newPolygon);
-          } else if (
-            this.drawingObject?.isDrawing &&
-            this.drawingObject.type === "rectangle"
-          ) {
-            console.log("Draw Rectangle - BEGIN");
           }
         },
       );
@@ -1105,27 +1120,30 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:up",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
-          if (this.isDragging) {
-            // Reset the viewport
+          const evt = opt.e as MouseEvent;
+          if (
+            (evt.button === 0 && !opt.target && !drawingObject.isDrawing) ||
+            evt.button === 1
+          ) {
+            this.isDragging = false;
+            this.selection = true;
             editor.canvas.zoomToPoint(
               { x: opt.e.offsetX, y: opt.e.offsetY },
               editor.canvas.getZoom(),
             );
-          }
-          this.isDragging = false;
-          this.selection = true;
-
-          // Disable drawing when it's a rectangle on mouse up
-          if (
-            this.drawingObject?.isDrawing &&
-            this.drawingObject.type === "rectangle"
-          ) {
-            console.log("Draw Rectangle - DOWN");
-            resetDrawingObject();
-            updateObjectHelper(opt.target);
-            opt.target?.on("deselected", function () {
-              editor.canvas.setActiveObject(opt.target!);
-            });
+          } else {
+            // Disable drawing when it's a rectangle on mouse up
+            if (
+              this.drawingObject?.isDrawing &&
+              this.drawingObject.type === "rectangle"
+            ) {
+              console.log("Draw Rectangle - DOWN");
+              resetDrawingObject();
+              updateObjectHelper(opt.target);
+              opt.target?.on("deselected", function () {
+                editor.canvas.setActiveObject(opt.target!);
+              });
+            }
           }
         },
       );
@@ -1134,11 +1152,28 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       editor.canvas.on(
         "mouse:move",
         function (this: fabricTypes.CanvasAnnotationState, opt) {
-          const isDrawingObject = this.drawingObject?.isDrawing;
-          const drawingObjectType = this.drawingObject?.type;
-          const pointer = editor?.canvas.getPointer(opt.e);
+          const pointer = editor.canvas.getPointer(opt.e, false);
+          const canvasWidth = editor.canvas.getWidth();
+          const canvasHeight = editor.canvas.getHeight();
+          const imageWidth = imageSize.width; // From your state
+          const imageHeight = imageSize.height;
 
-          if (this.isDragging && !isDrawingObject) {
+          // Get the scale ratio
+          const currentScaleRatio = scaleRatio; // From your state
+
+          // Compute the image's top-left corner position in canvas coordinates
+          const imageLeft =
+            canvasWidth / 2 - (imageWidth * currentScaleRatio) / 2;
+          const imageTop =
+            canvasHeight / 2 - (imageHeight * currentScaleRatio) / 2;
+
+          // Calculate pointer position relative to the image's top-left corner
+          const relativeX = (pointer.x - imageLeft) / currentScaleRatio;
+          const relativeY = (pointer.y - imageTop) / currentScaleRatio;
+
+          // Update the last pointer position with coordinates relative to the image
+          lastPointerPosition.current = { x: relativeX, y: relativeY };
+          if (this.isDragging) {
             const e = opt.e;
             const vpt = editor.canvas.viewportTransform;
             if (vpt) {
@@ -1148,58 +1183,62 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
               this.lastPosY = e.clientY;
               editor.canvas.requestRenderAll();
             }
-          }
+          } else {
+            const isDrawingObject = this.drawingObject?.isDrawing;
+            const drawingObjectType = this.drawingObject?.type;
+            const pointer = editor?.canvas.getPointer(opt.e);
 
-          if (isDrawingObject && drawingObjectType === "polygon") {
-            const newPoints = drawingObject.points.concat({
-              x: pointer.x,
-              y: pointer.y,
-            });
+            if (isDrawingObject && drawingObjectType === "polygon") {
+              const newPoints = drawingObject.points.concat({
+                x: pointer.x,
+                y: pointer.y,
+              });
 
-            const polygon = fabricUtils.findObjectByName(
-              editor.canvas,
-              drawingObject.id,
-            );
+              const polygon = fabricUtils.findObjectByName(
+                editor.canvas,
+                drawingObject.id,
+              );
 
-            if (polygon) editor.canvas.remove(polygon);
+              if (polygon) editor.canvas.remove(polygon);
 
-            // Draw a new polygon from scratch
-            const newPolygon = fabricUtils.createControllableCustomObject(
-              fabric.Polyline,
-              newPoints,
-              { name: drawingObject.id },
-            );
+              // Draw a new polygon from scratch
+              const newPolygon = fabricUtils.createControllableCustomObject(
+                fabric.Polyline,
+                newPoints,
+                { name: drawingObject.id },
+              );
 
-            // Add object to canvas and set it as ACTIVE
-            editor.canvas.add(newPolygon);
-            editor.canvas.setActiveObject(newPolygon);
-          } else if (isDrawingObject && drawingObjectType === "rectangle") {
-            const rectangle = fabricUtils.findObjectByName(
-              editor.canvas,
-              drawingObject.id,
-            );
+              // Add object to canvas and set it as ACTIVE
+              editor.canvas.add(newPolygon);
+              editor.canvas.setActiveObject(newPolygon);
+            } else if (isDrawingObject && drawingObjectType === "rectangle") {
+              const rectangle = fabricUtils.findObjectByName(
+                editor.canvas,
+                drawingObject.id,
+              );
 
-            if (rectangle) editor.canvas.remove(rectangle);
+              if (rectangle) editor.canvas.remove(rectangle);
 
-            if (!this.lastClickCoords) return;
+              if (!this.lastClickCoords) return;
 
-            const newPoints = [
-              { x: this.lastClickCoords?.x, y: this.lastClickCoords?.y },
-              { x: pointer.x, y: this.lastClickCoords?.y },
-              { x: pointer.x, y: pointer.y },
-              { x: this.lastClickCoords?.x, y: pointer.y },
-            ];
-            // Draw a new rectangle from scratch
-            const newRectangle = fabricUtils.createControllableCustomObject(
-              fabric.Polygon,
-              newPoints,
-              { name: drawingObject.id },
-              true,
-            );
+              const newPoints = [
+                { x: this.lastClickCoords?.x, y: this.lastClickCoords?.y },
+                { x: pointer.x, y: this.lastClickCoords?.y },
+                { x: pointer.x, y: pointer.y },
+                { x: this.lastClickCoords?.x, y: pointer.y },
+              ];
+              // Draw a new rectangle from scratch
+              const newRectangle = fabricUtils.createControllableCustomObject(
+                fabric.Polygon,
+                newPoints,
+                { name: drawingObject.id },
+                true,
+              );
 
-            // // Add object to canvas and set it as ACTIVE
-            editor.canvas.add(newRectangle);
-            editor.canvas.setActiveObject(newRectangle);
+              // // Add object to canvas and set it as ACTIVE
+              editor.canvas.add(newRectangle);
+              editor.canvas.setActiveObject(newRectangle);
+            }
           }
         },
       );
@@ -1302,6 +1341,8 @@ const Board = React.forwardRef<BoardActions, BoardProps>(
       loadItems,
       scaleRatio,
       isInDrawingMode,
+      imageSize.width,
+      imageSize.height,
     ]);
 
     // Update zoom parent value
