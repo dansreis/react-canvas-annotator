@@ -42,7 +42,7 @@
     "@testing-library/react": "^16.0.0",
     "@types/fabric": "^5.3.7",
     "@types/react": "^18.3.3",
-    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/eslint-plugin": "^8.14.0",
     "@typescript-eslint/parser": "^7.13.1",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
